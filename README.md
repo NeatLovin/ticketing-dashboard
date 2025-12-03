@@ -2,6 +2,8 @@
 
 Dashboard d’analytics de tickets basé sur les webhooks Petzi, un backend Firebase et un frontend Vue.js pour des insights en temps réel.
 
+---
+
 ## 🔍 Objectif du projet
 
 - Centraliser les événements provenant de Petzi (tickets, ventes, événements, etc.)
@@ -9,125 +11,194 @@ Dashboard d’analytics de tickets basé sur les webhooks Petzi, un backend Fire
 - Les afficher dans un dashboard en temps réel (Vue.js)
 - Permettre d’analyser les performances (ventes, fréquentation, répartition par événement, etc.)
 
-## 🧱 Stack technique (prévue)
+---
+
+## 🧱 Stack technique
 
 - **Frontend**
-  - [Vue.js 3](https://vuejs.org/) (Composition API)
-  - Vite / Vue CLI (à confirmer)
-  - UI kit (ex : TailwindCSS, Vuetify ou autre – à définir)
-  - Authentification (Firebase Auth ou autre – à définir)
+  - Vue.js 3 (Vite)
+  - (à définir plus tard : Tailwind / autre UI kit, Auth, etc.)
 
 - **Backend**
   - **Firebase**
-    - Cloud Firestore ou Realtime Database (à choisir)
-    - Cloud Functions pour recevoir et traiter les webhooks Petzi
-    - Firebase Hosting pour servir le frontend (optionnel)
+    - Cloud Functions (HTTP) pour recevoir les webhooks Petzi (`petziWebhook`)
+    - Cloud Firestore pour stocker les tickets (`tickets`, etc.)
+    - Firebase Emulator Suite pour le développement local
   - Webhooks Petzi (endpoint HTTP exposé via Firebase Functions)
 
 - **Outils**
-  - Node.js (LTS)
-  - npm / pnpm / yarn (à définir)
+  - Node.js (version 22+ recommandée)
+  - npm / pnpm / yarn
   - Git + GitHub
+  - Python (pour le script `petzi_simulator.py` de test des webhooks)
+
+---
 
 ## 🚧 État actuel
 
-> Début de projet, structure en cours de mise en place.
+> Début de projet, mise en place du backend et du frontend.
 
-- [ ] Initialiser le projet Vue
-- [ ] Configurer Firebase (projet, services nécessaires)
-- [ ] Créer une fonction webhook pour Petzi
-- [ ] Définir le modèle de données pour les analytics
+- [x] Initialiser le projet Vue
+- [x] Configurer Firebase (projet, emulators)
+- [x] Créer une fonction webhook pour Petzi (`petziWebhook`)
+- [ ] Définir le modèle de données final pour les analytics
 - [ ] Mettre en place un premier dashboard minimal (ex : total des tickets vendus)
 
-## ⚙️ Installation (prévisionnel)
+---
 
-1. **Cloner le dépôt**
+## ⚙️ Installation & setup
 
-   ```bash
-   git clone https://github.com/<ton-compte>/ticketing-dashboard.git
-   cd ticketing-dashboard
-   ```
+### 1. Cloner le dépôt
 
-2. **Installer les dépendances**
+```bash
+git clone https://github.com/<ton-compte>/ticketing-dashboard.git
+cd ticketing-dashboard
+```
 
-   ```bash
-   npm install
-   # ou
-   pnpm install
-   ```
+### 2. Frontend (Vue)
 
-3. **Configurer l’environnement**
+Dans `frontend/` :
 
-   Créer un fichier `.env.local` (ou équivalent) à la racine du frontend :
+```bash
+cd frontend
+npm install
+```
 
-   ```bash
-   cp .env.example .env.local
-   ```
-
-   Puis renseigner :
-
-   ```bash
-   VITE_FIREBASE_API_KEY=...
-   VITE_FIREBASE_AUTH_DOMAIN=...
-   VITE_FIREBASE_PROJECT_ID=...
-   # etc.
-   ```
-
-   Et les secrets nécessaires côté Firebase Functions (via `firebase functions:config:set`).
-
-## ▶️ Lancement du projet en développement
-
-**Frontend (Vue)**
+Lancement du serveur de dev :
 
 ```bash
 npm run dev
-# ou
-pnpm dev
 ```
 
-**Backend (Firebase)**
+> ⚠️ Plus tard, il faudra ajouter un fichier `.env.local` pour configurer la connexion Firebase côté front (`VITE_FIREBASE_API_KEY`, etc.). Pour l’instant, le front peut tourner sans connexion réelle.
+
+### 3. Backend (Firebase Functions + Firestore)
+
+Dans `backend/functions/` :
 
 ```bash
+cd ../backend/functions
+npm install
+```
+
+#### 3.1. Fichier `.env` obligatoire (secret Petzi)
+
+Chaque développeur doit créer **son propre** fichier `.env` dans `backend/functions` :
+
+```bash
+# dans backend/functions
+echo PETZI_SECRET=ton_secret_petzi_ici > .env
+```
+
+Contenu attendu du fichier `backend/functions/.env` :
+
+```env
+PETZI_SECRET=TON_SECRET_PARTAGE_AVEC_PETZI
+```
+
+- `PETZI_SECRET` = secret partagé entre Petzi (ou le simulateur) et la fonction Firebase.
+- **Ne pas committer** ce fichier (`.env` est ignoré par Git).
+
+Le simulateur Petzi doit utiliser **le même secret** que celui défini dans ce `.env`.
+
+#### 3.2. Lancer les emulators Firebase en local
+
+Depuis `backend/` :
+
+```bash
+cd ..
 firebase emulators:start
 ```
 
-> À adapter une fois la structure du repo figée (dossiers `functions`, `hosting`, `src`, etc.).
+Cela démarre :
 
-## 📡 Webhooks Petzi (brouillon de design)
+- l’émulateur **Functions** (incluant `petziWebhook`)
+- l’émulateur **Firestore**
+- l’interface web des emulators : http://127.0.0.1:4000
 
-- Exposer une route `POST /webhooks/petzi` via Firebase Functions.
-- Valider la signature Petzi (si disponible).
-- Normaliser les événements reçus (ex : `ticket.created`, `ticket.refunded`, etc.).
-- Persister les données nécessaires dans Firestore (ex : collection `tickets`, `events`, `venues`).
-- Déclencher éventuellement des agrégations (Cloud Functions, collections dédiées aux stats).
+---
+
+## 🧪 Tester le webhook avec `petzi_simulator.py`
+
+Un script Python permet de simuler les appels de Petzi vers l’endpoint Firebase.
+
+### 1. Pré-requis
+
+- Python installé
+- `PETZI_SECRET` dans `backend/functions/.env` **identique** au secret utilisé par le simulateur.
+
+### 2. Commande de test
+
+Depuis `backend/` :
+
+```bash
+cd backend
+python .\petzi_simulator.py http://127.0.0.1:5001/<project-id>/us-central1/petziWebhook TON_SECRET_PARTAGE
+```
+
+Exemple avec le secret par défaut utilisé en dev :
+
+```bash
+python .\petzi_simulator.py ^
+  http://127.0.0.1:5001/ticketing-dashboard-8592e/us-central1/petziWebhook ^
+  AEeyJhbGciOiJIUzUxMiIsImlzcyI6
+```
+
+(Sous PowerShell, tu peux mettre la commande sur une seule ligne si tu préfères.)
+
+Si tout est correct :
+
+- le script affiche une réponse `OK`,
+- une collection `tickets` (ou `tickets_test` selon la config) apparaît dans l’UI Firestore de l’émulateur :  
+  http://127.0.0.1:4000/firestore
+
+---
+
+## 📡 Webhooks Petzi (design actuel)
+
+- Endpoint HTTP Firebase Function : `petziWebhook`
+  - méthode : `POST`
+  - vérification de la signature HMAC basée sur `PETZI_SECRET`
+  - parsing du JSON envoyé par Petzi
+  - mapping des champs utiles vers un document Firestore (collection `tickets`)
+- Les événements de type `ticket_created` / `ticket_updated` sont persistés avec :
+  - infos event (id, nom, date…)
+  - infos ticket (numéro, type, catégorie, prix…)
+  - infos session (date, heure, salle…)
+  - infos acheteur (nom, CP, etc.)
+  - payload brut pour debug (`rawPayload`)
+
+---
 
 ## 📊 Dashboard (brouillon de design)
 
 Quelques idées de widgets :
 
 - Nombre total de tickets vendus (période donnée)
-- CA total / par événement
+- Chiffre d’affaires total / par événement
 - Top événements par ventes
-- Répartition des ventes dans le temps (courbe)
+- Courbe d’évolution des ventes dans le temps
 - Répartition par type de billet / tarif
+
+Le front Vue se connectera à Firestore pour lire la collection `tickets` et construire ces vues.
+
+---
 
 ## 🗺️ Roadmap (indicative)
 
-- **Phase 1** : Setup technique (Firebase + Vue + CI simple)
-- **Phase 2** : Réception et stockage des webhooks Petzi
-- **Phase 3** : Premier dashboard temps réel basique
-- **Phase 4** : Filtres avancés / export / multi-utilisateur
+- **Phase 1** : Setup technique (Firebase + Vue + repo)
+- **Phase 2** : Réception et stockage des webhooks Petzi (OK en local)
+- **Phase 3** : Premier dashboard temps réel basique (Vue + Firestore)
+- **Phase 4** : Filtres avancés / agrégations / exports
 - **Phase 5** : Optimisations perf, sécurité, UX
+
+---
 
 ## 🤝 Contribution
 
-Pour l’instant, le projet est en phase de bootstrap.  
-Notes rapides :
-
 - Utiliser des branches thématiques (`feature/...`, `fix/...`)
-- Ouvrir une PR avec description courte et claire
-- Ajouter au minimum des tests unitaires de base sur les fonctions critiques
-
-## 📄 Licence
-
-À définir (MIT, Apache-2.0, etc.).
+- Ouvrir une PR avec une description courte et claire
+- Vérifier que :
+  - les emulators démarrent sans erreur
+  - le simulateur Petzi fonctionne (`200 OK` et docs créés)
+- (Plus tard) ajouter des tests unitaires sur les fonctions critiques (signature HMAC, mapping des données)
