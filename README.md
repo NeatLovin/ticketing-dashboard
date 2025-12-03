@@ -17,7 +17,9 @@ Dashboard d’analytics de tickets basé sur les webhooks Petzi, un backend Fire
 
 - **Frontend**
   - Vue.js 3 (Vite)
-  - (à définir plus tard : Tailwind / autre UI kit, Auth, etc.)
+  - Tailwind CSS pour le styling
+  - Chart.js / vue-chartjs pour les graphiques
+  - Leaflet pour les cartes géographiques
 
 - **Backend**
   - **Firebase**
@@ -36,13 +38,17 @@ Dashboard d’analytics de tickets basé sur les webhooks Petzi, un backend Fire
 
 ## 🚧 État actuel
 
-> Début de projet, mise en place du backend et du frontend.
+> Backend prêt, frontend avec tableaux de bord en temps réel implémentés.
 
 - [x] Initialiser le projet Vue
 - [x] Configurer Firebase (projet, emulators)
 - [x] Créer une fonction webhook pour Petzi (`petziWebhook`)
-- [ ] Définir le modèle de données final pour les analytics
-- [ ] Mettre en place un premier dashboard minimal (ex : total des tickets vendus)
+- [x] Définir le modèle de données final pour les analytics
+- [x] Mettre en place les tableaux de bord en temps réel
+  - [x] Courbes de vente d'une soirée (évolution temporelle)
+  - [x] Localisation géographique des clients
+  - [x] Panier moyen (nombre de tickets par transaction)
+  - [x] Récapitulation mensuelle comparée année sur année
 
 ---
 
@@ -160,4 +166,66 @@ Si tout est correct :
 
 ---
 
-Le front Vue se connectera à Firestore pour lire la collection `tickets` et construire ces vues.
+## 📊 Tableaux de bord
+
+Le frontend Vue.js se connecte à Firestore en temps réel pour afficher plusieurs tableaux de bord :
+
+### 1. Courbes de vente en temps réel
+- Visualisation de l'évolution des ventes par heure
+- Filtrage par événement spécifique
+- Affichage des ventes cumulées et par heure
+- Mise à jour en temps réel via Firestore
+
+### 2. Localisation géographique des clients
+- Carte interactive (Leaflet/OpenStreetMap)
+- Géocodage des codes postaux des clients
+- Filtrage par date de session
+- Regroupement par code postal pour éviter la surcharge
+
+### 3. Panier moyen
+- Calcul du nombre moyen de tickets par transaction
+- Statistiques sur le total de transactions et tickets
+- Graphique de répartition des transactions par nombre de tickets
+
+### 4. Récapitulation mensuelle
+- Comparaison année sur année (année actuelle vs année précédente)
+- Graphiques comparatifs des ventes mensuelles
+- Évolution des revenus mensuels
+- Calcul du pourcentage d'évolution
+
+### Accès aux tableaux de bord
+
+Une fois le frontend lancé (`npm run dev` dans `frontend/`), accédez à :
+- **Page d'accueil** : `http://localhost:5173/`
+- **Tableaux de bord** : `http://localhost:5173/dashboard`
+- **Liste des tickets** : `http://localhost:5173/tickets`
+
+---
+
+## 🔧 Configuration Frontend
+
+### Variables d'environnement
+
+Créez un fichier `.env.local` dans `frontend/` avec :
+
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+```
+
+Ces valeurs sont disponibles dans la console Firebase de votre projet.
+
+### Dépendances Frontend
+
+Les dépendances suivantes ont été ajoutées :
+- `chart.js` et `vue-chartjs` : pour les graphiques
+- `leaflet` : pour les cartes géographiques
+- `tailwindcss`, `postcss`, `autoprefixer` : pour le styling
+
+---
+
+Le front Vue se connecte à Firestore en temps réel pour lire la collection `tickets` et construire ces vues.

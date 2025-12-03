@@ -19,14 +19,15 @@ onMounted(async () => {
   loading.value = true;
   error.value = null;
 
-  // Timeout de secours pour éviter "Chargement..." infini
-  const TIMEOUT_MS = 10000;
+  // Timeout de secours pour éviter "Chargement..." infini (augmenté à 30 secondes)
+  const TIMEOUT_MS = 30000;
   const timeoutId = setTimeout(() => {
     if (loading.value) {
-      console.error("Timeout: lecture tickets trop longue");
+      console.error("⏱️ Timeout: lecture tickets trop longue (>30s)");
       loading.value = false;
       error.value =
-        "Timeout: impossible de charger les tickets. Vérifie la connexion Firebase et la console du navigateur.";
+        "Timeout: impossible de charger les tickets après 30 secondes. " +
+        "Vérifiez votre connexion internet, les règles de sécurité Firestore, et la console du navigateur pour plus de détails.";
     }
   }, TIMEOUT_MS);
 
@@ -35,12 +36,71 @@ onMounted(async () => {
       throw new Error("Firestore (db) non initialisé — vérifie frontend/src/firebase.js et .env.local");
     }
 
-    console.debug("Requête Firestore tickets (orderBy createdAt desc)...");
-    const q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
-    const snap = await getDocs(q);
+    console.log("🔍 Début de la récupération des tickets depuis Firestore...");
+    console.log("📊 Collection: 'tickets'");
+    console.log("⏱️ Timeout configuré: 30 secondes");
+    console.log("🔗 Configuration Firebase:", {
+      projectId: db.app.options.projectId,
+      databaseId: db._delegate?.databaseId || "default",
+    });
+    
+    const startTime = Date.now();
+    
+    // Essayer d'abord une requête simple sans orderBy pour éviter les problèmes d'index
+    let q;
+    let snap;
+    let docs;
+    
+    try {
+      console.log("📝 Tentative 1: Requête simple sans orderBy...");
+      q = query(collection(db, "tickets"));
+      snap = await getDocs(q);
+      docs = snap.docs;
+      const elapsed = Date.now() - startTime;
+      console.log(`✅ Requête réussie en ${elapsed}ms. ${docs.length} document(s) trouvé(s)`);
+      
+      // Si on a des résultats, essayer de les trier par createdAt si disponible
+      if (docs.length > 0) {
+        console.log("🔄 Tri manuel des résultats par createdAt...");
+        docs = docs.sort((a, b) => {
+          const dateA = a.data().createdAt;
+          const dateB = b.data().createdAt;
+          if (!dateA || !dateB) return 0;
+          try {
+            const timeA = dateA.toDate ? dateA.toDate().getTime() : new Date(dateA).getTime();
+            const timeB = dateB.toDate ? dateB.toDate().getTime() : new Date(dateB).getTime();
+            return timeB - timeA; // Plus récent en premier
+          } catch {
+            return 0;
+          }
+        });
+        console.log("✅ Tri terminé");
+      }
+    } catch (simpleError) {
+      const elapsed = Date.now() - startTime;
+      console.error(`❌ Erreur avec requête simple après ${elapsed}ms:`, simpleError);
+      console.error("Détails:", {
+        code: simpleError?.code,
+        message: simpleError?.message,
+      });
+      
+      // Si la requête simple échoue, essayer avec orderBy (peut-être qu'un index existe)
+      try {
+        console.log("📝 Tentative 2: Requête avec orderBy('createdAt', 'desc')...");
+        q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
+        snap = await getDocs(q);
+        docs = snap.docs;
+        const elapsed2 = Date.now() - startTime;
+        console.log(`✅ Requête avec orderBy réussie en ${elapsed2}ms. ${docs.length} document(s) trouvé(s)`);
+      } catch (orderByError) {
+        const elapsed2 = Date.now() - startTime;
+        console.error(`❌ Erreur avec orderBy après ${elapsed2}ms:`, orderByError);
+        throw orderByError; // Relancer l'erreur pour qu'elle soit gérée par le catch principal
+      }
+    }
 
     // transformer en objets JS simples
-    tickets.value = snap.docs.map((doc) => {
+    tickets.value = docs.map((doc) => {
       const data = doc.data();
 
       // createdAt peut être un Timestamp Firestore, une ISO string, ou autre.
@@ -72,9 +132,40 @@ onMounted(async () => {
     });
 
     console.debug(`Tickets chargés: ${tickets.value.length}`);
+    
+    if (tickets.value.length === 0) {
+      console.warn("⚠️ Aucun ticket trouvé dans la collection 'tickets'");
+      console.info("💡 Pour ajouter des tickets, utilisez le simulateur Petzi ou envoyez des webhooks");
+      console.info("🔍 Vérifications à faire:");
+      console.info("   1. Vérifiez que vous êtes connecté au bon projet Firebase (émulateur vs cloud)");
+      console.info("   2. Ouvrez la console Firebase/émulateur et vérifiez que la collection 'tickets' contient des documents");
+      console.info("   3. Si vous utilisez l'émulateur, ajoutez VITE_USE_FIREBASE_EMULATOR=true dans .env.local");
+      console.info("   4. Vérifiez les règles de sécurité Firestore dans backend/firestore.rules");
+    } else {
+      console.log(`✅ ${tickets.value.length} ticket(s) chargé(s) avec succès!`);
+    }
   } catch (err) {
-    console.error("Erreur lecture tickets:", err);
-    error.value = err?.message || String(err);
+    console.error("❌ Erreur lecture tickets:", err);
+    console.error("Détails de l'erreur:", {
+      code: err?.code,
+      message: err?.message,
+      stack: err?.stack,
+    });
+    
+    // Messages d'erreur plus explicites
+    let errorMessage = err?.message || String(err);
+    if (err?.code === "unavailable" || err?.code === "deadline-exceeded") {
+      errorMessage = "Impossible de se connecter à Firestore. Vérifiez votre connexion internet et que Firebase est accessible.";
+      if (import.meta.env.DEV) {
+        errorMessage += " Si vous utilisez l'émulateur, assurez-vous qu'il est démarré et ajoutez VITE_USE_FIREBASE_EMULATOR=true dans .env.local";
+      }
+    } else if (err?.code === "permission-denied") {
+      errorMessage = "Permission refusée. Vérifiez les règles de sécurité Firestore.";
+    } else if (err?.code === "failed-precondition") {
+      errorMessage = "Index manquant. Créez l'index requis dans la console Firebase ou utilisez l'émulateur.";
+    }
+    
+    error.value = errorMessage;
   } finally {
     clearTimeout(timeoutId);
     loading.value = false;
