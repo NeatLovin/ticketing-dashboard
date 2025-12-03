@@ -136,16 +136,6 @@ cd backend
 python .\petzi_simulator.py http://127.0.0.1:5001/<project-id>/us-central1/petziWebhook TON_SECRET_PARTAGE
 ```
 
-Exemple avec le secret par défaut utilisé en dev :
-
-```bash
-python .\petzi_simulator.py ^
-  http://127.0.0.1:5001/ticketing-dashboard-8592e/us-central1/petziWebhook ^
-  AEeyJhbGciOiJIUzUxMiIsImlzcyI6
-```
-
-(Sous PowerShell, tu peux mettre la commande sur une seule ligne si tu préfères.)
-
 Si tout est correct :
 
 - le script affiche une réponse `OK`,
@@ -170,35 +160,4 @@ Si tout est correct :
 
 ---
 
-## 📊 Dashboard (brouillon de design)
-
-Quelques idées de widgets :
-
-- Nombre total de tickets vendus (période donnée)
-- Chiffre d’affaires total / par événement
-- Top événements par ventes
-- Courbe d’évolution des ventes dans le temps
-- Répartition par type de billet / tarif
-
 Le front Vue se connectera à Firestore pour lire la collection `tickets` et construire ces vues.
-
----
-
-## 🗺️ Roadmap (indicative)
-
-- **Phase 1** : Setup technique (Firebase + Vue + repo)
-- **Phase 2** : Réception et stockage des webhooks Petzi (OK en local)
-- **Phase 3** : Premier dashboard temps réel basique (Vue + Firestore)
-- **Phase 4** : Filtres avancés / agrégations / exports
-- **Phase 5** : Optimisations perf, sécurité, UX
-
----
-
-## 🤝 Contribution
-
-- Utiliser des branches thématiques (`feature/...`, `fix/...`)
-- Ouvrir une PR avec une description courte et claire
-- Vérifier que :
-  - les emulators démarrent sans erreur
-  - le simulateur Petzi fonctionne (`200 OK` et docs créés)
-- (Plus tard) ajouter des tests unitaires sur les fonctions critiques (signature HMAC, mapping des données)
