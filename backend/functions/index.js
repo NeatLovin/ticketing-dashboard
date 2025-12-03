@@ -166,7 +166,7 @@ function buildTicketDoc(payload) {
 
     // Technique
     rawPayload: payload, // pour debug / audit
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: new Date().toISOString(), // date/heure de création du doc
   };
 
   return {
