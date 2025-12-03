@@ -5,12 +5,9 @@
 
 require("dotenv").config();
 
-const { setGlobalOptions } = require("firebase-functions");
-const { onRequest } = require("firebase-functions/https");
+const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
-
-setGlobalOptions({ maxInstances: 10 });
 
 // Init Firestore
 if (!admin.apps.length) {
@@ -180,7 +177,7 @@ function buildTicketDoc(payload) {
  * URL émulateur typique :
  *   http://127.0.0.1:5001/<project-id>/us-central1/petziWebhook
  */
-exports.petziWebhook = onRequest(async (req, res) => {
+exports.petziWebhook = functions.https.onRequest(async (req, res) => {
   try {
     // 1) Méthode HTTP
     if (req.method !== "POST") {
