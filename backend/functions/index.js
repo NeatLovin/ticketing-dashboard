@@ -3,6 +3,8 @@
  * et persister les tickets dans Firestore.
  */
 
+require("dotenv").config();
+
 const { setGlobalOptions } = require("firebase-functions");
 const { onRequest } = require("firebase-functions/https");
 const admin = require("firebase-admin");
