@@ -121,12 +121,22 @@ onMounted(async () => {
         eventName: data.eventName ?? null,
         sessionDate: data.sessionDate ?? null,
         sessionTime: data.sessionTime ?? null,
+        sessionDoors: data.sessionDoors ?? null,
         ticketNumber: data.ticketNumber ?? null,
         priceAmount: typeof data.priceAmount === "number" ? data.priceAmount : (data.priceAmount ? Number(data.priceAmount) : undefined),
         priceCurrency: data.priceCurrency ?? null,
         createdAtRaw,
-        // conserver payload si utile plus tard
-        // raw: data.rawPayload ?? null,
+        // New fields
+        ticketType: data.ticketType ?? null,
+        ticketCategory: data.ticketCategory ?? null,
+        buyerFirstName: data.buyerFirstName ?? null,
+        buyerLastName: data.buyerLastName ?? null,
+        buyerEmail: data.buyerEmail ?? null,
+        buyerPostcode: data.buyerPostcode ?? null,
+        venueName: data.venueName ?? null,
+        venueStreet: data.venueStreet ?? null,
+        venueCity: data.venueCity ?? null,
+        cancellationReason: data.cancellationReason ?? null,
       };
     });
 
@@ -187,36 +197,66 @@ onMounted(async () => {
 
     <div v-else-if="error" class="mt-4 text-red-600">Erreur : {{ error }}</div>
 
-    <table v-else class="mt-4 border-collapse w-full">
+    <table v-else class="mt-4 border-collapse w-full text-sm">
       <thead>
-        <tr>
+        <tr class="bg-gray-100">
           <th class="border px-2 py-1 text-left">Event</th>
           <th class="border px-2 py-1 text-left">Date</th>
           <th class="border px-2 py-1 text-left">Heure</th>
+          <th class="border px-2 py-1 text-left">Lieu</th>
           <th class="border px-2 py-1 text-left">Ticket #</th>
+          <th class="border px-2 py-1 text-left">Type</th>
+          <th class="border px-2 py-1 text-left">Catégorie</th>
+          <th class="border px-2 py-1 text-left">Acheteur</th>
           <th class="border px-2 py-1 text-left">Prix</th>
           <th class="border px-2 py-1 text-left">Créé le</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="t in tickets" :key="t.id">
+        <tr v-for="t in tickets" :key="t.id" class="hover:bg-gray-50">
           <td class="border px-2 py-1">{{ t.eventName ?? "—" }}</td>
           <td class="border px-2 py-1">{{ t.sessionDate ?? "—" }}</td>
-          <td class="border px-2 py-1">{{ t.sessionTime ?? "—" }}</td>
-          <td class="border px-2 py-1">{{ t.ticketNumber ?? "—" }}</td>
           <td class="border px-2 py-1">
+            {{ t.sessionTime ?? "—" }}
+            <div v-if="t.sessionDoors" class="text-xs text-gray-500">Portes: {{ t.sessionDoors }}</div>
+          </td>
+          <td class="border px-2 py-1">
+            <div v-if="t.venueName || t.venueCity">
+              {{ t.venueName }}<br v-if="t.venueName && t.venueCity"/>
+              <span v-if="t.venueStreet" class="text-xs text-gray-500 block">{{ t.venueStreet }}</span>
+              <span class="text-xs text-gray-500">{{ t.venueCity }}</span>
+            </div>
+            <span v-else>—</span>
+          </td>
+          <td class="border px-2 py-1 font-mono text-xs">
+            {{ t.ticketNumber ?? "—" }}
+            <div v-if="t.cancellationReason" class="text-red-600 font-bold text-xs mt-1">
+              ANNULÉ: {{ t.cancellationReason }}
+            </div>
+          </td>
+          <td class="border px-2 py-1">{{ t.ticketType ?? "—" }}</td>
+          <td class="border px-2 py-1">{{ t.ticketCategory ?? "—" }}</td>
+          <td class="border px-2 py-1">
+            <div v-if="t.buyerFirstName || t.buyerLastName">
+              {{ t.buyerFirstName }} {{ t.buyerLastName }}
+              <div v-if="t.buyerEmail" class="text-xs text-blue-600">{{ t.buyerEmail }}</div>
+              <div v-if="t.buyerPostcode" class="text-xs text-gray-500">{{ t.buyerPostcode }}</div>
+            </div>
+            <span v-else>—</span>
+          </td>
+          <td class="border px-2 py-1 whitespace-nowrap">
             <span v-if="typeof t.priceAmount === 'number'">
               {{ formatPrice(t.priceAmount, t.priceCurrency) }}
             </span>
             <span v-else>—</span>
           </td>
-          <td class="border px-2 py-1">
+          <td class="border px-2 py-1 text-xs">
             <span v-if="t.createdAtRaw !== undefined">{{ t.createdAtRaw }}</span>
             <span v-else>—</span>
           </td>
         </tr>
         <tr v-if="tickets.length === 0 && !loading">
-          <td class="border px-2 py-1" colspan="6">Aucun ticket trouvé.</td>
+          <td class="border px-2 py-1 text-center py-4" colspan="10">Aucun ticket trouvé.</td>
         </tr>
       </tbody>
     </table>
