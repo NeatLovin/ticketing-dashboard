@@ -56,14 +56,21 @@ try {
     db = getFirestore(app);
     
     // Se connecter à l'émulateur Firebase en développement si demandé
-    // Pour utiliser l'émulateur, ajoutez VITE_USE_FIREBASE_EMULATOR=true dans .env.local
-    const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true";
+    // Supporte VITE_USE_FIREBASE_EMULATOR et VITE_USE_FIREBASE_EMULATORS
+    const emulatorFlagRaw = (import.meta.env.VITE_USE_FIREBASE_EMULATOR ?? import.meta.env.VITE_USE_FIREBASE_EMULATORS ?? "false");
+    const emulatorFlag = String(emulatorFlagRaw).toLowerCase();
+    const useEmulator = ["true", "1", "yes", "y"].includes(emulatorFlag);
     
     if (useEmulator) {
       try {
         // Vérifier si on n'est pas déjà connecté à l'émulateur
         connectFirestoreEmulator(db, "127.0.0.1", 8080);
         console.log("🔌 Connecté à l'émulateur Firestore local (127.0.0.1:8080)");
+        if (import.meta.env.DEV) {
+          console.log("⚙️  Drapeau émulateur détecté via:",
+            ("VITE_USE_FIREBASE_EMULATOR" in import.meta.env) ? "VITE_USE_FIREBASE_EMULATOR" :
+            ("VITE_USE_FIREBASE_EMULATORS" in import.meta.env) ? "VITE_USE_FIREBASE_EMULATORS" : "valeur par défaut");
+        }
         console.log("💡 Assurez-vous que l'émulateur est démarré: cd backend && firebase emulators:start");
       } catch (emulatorError) {
         // L'émulateur est peut-être déjà connecté

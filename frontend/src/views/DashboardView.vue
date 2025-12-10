@@ -5,7 +5,19 @@
       
       <div class="space-y-6">
         <!-- Courbes de vente en temps réel -->
-        <SalesChart />
+        <div class="bg-white p-4 rounded-lg shadow">
+          <div class="mb-3 flex items-center gap-4">
+            <label class="inline-flex items-center gap-2">
+              <input type="checkbox" v-model="showCumulative" />
+              <span>Ventes cumulées</span>
+            </label>
+            <label class="inline-flex items-center gap-2">
+              <input type="checkbox" v-model="showHourly" />
+              <span>Ventes par heure</span>
+            </label>
+          </div>
+          <SalesChart :show-cumulative="showCumulative" :show-hourly="showHourly" />
+        </div>
         
         <!-- Localisation géographique -->
         <GeographicMap />
@@ -21,10 +33,15 @@
 </template>
 
 <script setup>
+import { ref } from "vue";
 import SalesChart from "../components/SalesChart.vue";
 import GeographicMap from "../components/GeographicMap.vue";
 import AverageBasket from "../components/AverageBasket.vue";
 import MonthlyComparison from "../components/MonthlyComparison.vue";
+
+// Par défaut, afficher les deux courbes
+const showCumulative = ref(true);
+const showHourly = ref(true);
 </script>
 
 <style scoped>

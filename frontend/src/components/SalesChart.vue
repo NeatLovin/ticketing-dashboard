@@ -3,17 +3,17 @@
     <h2 class="text-xl font-bold mb-4">Évolution des ventes - {{ selectedEventName || "Tous les événements" }}</h2>
     
     <div class="mb-4">
-      <label class="block text-sm font-medium mb-2">Sélectionner un événement :</label>
+      <label class="block text-sm font-medium mb-2">Sélectionner un ou plusieurs événements :</label>
       <select 
-        v-model="selectedEventId" 
-        @change="onEventChange"
-        class="border rounded px-3 py-2 w-full max-w-md"
+        v-model="selectedEventIds" 
+        multiple
+        class="border rounded px-3 py-2 w-full max-w-md h-40"
       >
-        <option value="">Tous les événements</option>
         <option v-for="event in uniqueEvents" :key="event.id" :value="event.id">
           {{ event.name }} ({{ event.date }})
         </option>
       </select>
+      <p class="mt-2 text-xs text-gray-500">Astuce: maintenez Ctrl/Cmd pour sélectionner plusieurs éléments.</p>
     </div>
 
     <div v-if="loading" class="text-center py-8">Chargement des données...</div>
@@ -51,11 +51,16 @@ ChartJS.register(
   Filler
 );
 
+// Props pour afficher/masquer les courbes
+const props = defineProps({
+  showCumulative: { type: Boolean, default: true },
+  showHourly: { type: Boolean, default: true },
+});
+
 const tickets = ref([]);
 const loading = ref(true);
 const error = ref(null);
-const selectedEventId = ref("");
-const selectedEventName = ref("");
+const selectedEventIds = ref([]);
 const unsubscribe = ref(null);
 
 // Extraire les événements uniques
@@ -76,19 +81,26 @@ const uniqueEvents = computed(() => {
   return Array.from(eventsMap.values()).sort((a, b) => b.date.localeCompare(a.date));
 });
 
-// Filtrer les tickets selon l'événement sélectionné
-const filteredTickets = computed(() => {
-  if (!selectedEventId.value) {
-    return tickets.value;
-  }
-  return tickets.value.filter((t) => t.eventId === selectedEventId.value);
+// Grouper les tickets par événement, en appliquant la sélection multiple si présente
+const ticketsByEvent = computed(() => {
+  const groups = new Map();
+  const selectionActive = Array.isArray(selectedEventIds.value) && selectedEventIds.value.length > 0;
+  tickets.value.forEach((t) => {
+    if (!t.eventId) return;
+    if (selectionActive && !selectedEventIds.value.includes(t.eventId)) return;
+    const key = t.eventId;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(t);
+  });
+  return groups; // Map<eventId, Ticket[]>
 });
 
 // Préparer les données pour le graphique
 const chartData = computed(() => {
-  const filtered = filteredTickets.value;
+  const groups = ticketsByEvent.value;
+  const groupEntries = Array.from(groups.entries());
   
-  if (filtered.length === 0) {
+  if (groupEntries.length === 0) {
     return {
       labels: [],
       datasets: [
@@ -112,124 +124,109 @@ const chartData = computed(() => {
     };
   }
   
-  // Grouper par heure de création pour voir l'évolution temporelle
-  const hourlyData = {};
+  // Construire les axes horaires par événement et une union triée des labels
+  const perEventHourly = new Map(); // Map<eventId, Record<label,{count,timestamp}>>
+  const labelSet = new Map(); // label -> timestamp
   
-  filtered.forEach((ticket) => {
-    // Utiliser generatedAt si disponible (date réelle de génération du ticket), sinon createdAt
-    const ticketDate = ticket.generatedAt || ticket.createdAt;
-    const date = TicketsService.toDate(ticketDate);
-    
-    if (date && !isNaN(date.getTime())) {
-      // Format: "DD/MM HH:00" avec l'année pour un tri correct
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const hour = String(date.getHours()).padStart(2, "0");
-      const hourKey = `${day}/${month} ${hour}:00`;
-      
-      if (!hourlyData[hourKey]) {
-        hourlyData[hourKey] = {
-          count: 0,
-          timestamp: new Date(year, date.getMonth(), date.getDate(), date.getHours()).getTime(),
-        };
+  groupEntries.forEach(([eventId, evTickets]) => {
+    const hourlyData = {};
+    evTickets.forEach((ticket) => {
+      const ticketDate = ticket.generatedAt || ticket.createdAt;
+      const date = TicketsService.toDate(ticketDate);
+      if (date && !isNaN(date.getTime())) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hour = String(date.getHours()).padStart(2, "0");
+        const hourKey = `${day}/${month} ${hour}:00`;
+        const ts = new Date(year, date.getMonth(), date.getDate(), date.getHours()).getTime();
+        if (!hourlyData[hourKey]) {
+          hourlyData[hourKey] = { count: 0, timestamp: ts };
+        }
+        hourlyData[hourKey].count++;
+        if (!labelSet.has(hourKey)) labelSet.set(hourKey, ts);
       }
-      hourlyData[hourKey].count++;
-    } else {
-      // Debug: tickets sans date valide
-      if (import.meta.env.DEV) {
-        console.warn("⚠️ Ticket sans date valide:", {
-          id: ticket.id,
-          createdAt: ticket.createdAt,
-          generatedAt: ticket.generatedAt,
-        });
-      }
-    }
+    });
+    perEventHourly.set(eventId, hourlyData);
   });
 
-  // Trier par timestamp pour un tri correct
-  const sortedKeys = Object.keys(hourlyData).sort((a, b) => {
-    return hourlyData[a].timestamp - hourlyData[b].timestamp;
-  });
+  const sortedLabels = Array.from(labelSet.entries())
+    .sort((a, b) => a[1] - b[1])
+    .map(([label]) => label);
 
-  // Calculer les ventes cumulées
-  let cumulative = 0;
-  const cumulativeData = sortedKeys.map((key) => {
-    cumulative += hourlyData[key].count;
-    return cumulative;
-  });
-
-  const hourlyCounts = sortedKeys.map((key) => hourlyData[key].count);
-  
-  const numPoints = sortedKeys.length;
+  // Déterminer la taille des points selon le nombre de labels
+  const numPoints = sortedLabels.length;
   const pointSize = numPoints <= 10 ? 5 : 3;
-
-  // Si on n'a qu'un seul point, ajouter un point avant pour créer une ligne visible
-  if (numPoints === 1 && cumulativeData[0] > 0) {
-    // Ajouter un point avant pour créer une ligne
-    const singleTimestamp = hourlyData[sortedKeys[0]].timestamp;
-    const oneHourBefore = new Date(singleTimestamp - 3600000); // 1 heure avant
-    const prevDay = String(oneHourBefore.getDate()).padStart(2, "0");
-    const prevMonth = String(oneHourBefore.getMonth() + 1).padStart(2, "0");
-    const prevHour = String(oneHourBefore.getHours()).padStart(2, "0");
-    const prevKey = `${prevDay}/${prevMonth} ${prevHour}:00`;
-    
-    sortedKeys.unshift(prevKey);
-    cumulativeData.unshift(0);
-    hourlyCounts.unshift(0);
-  }
 
   // Debug
   if (import.meta.env.DEV) {
-    console.log("📊 Données du graphique:", {
-      totalTickets: filtered.length,
-      timeSlots: sortedKeys.length,
-      labels: sortedKeys,
-      cumulativeData,
-      hourlyCounts,
-      sampleTicket: filtered.length > 0 ? {
-        id: filtered[0].id,
-        createdAt: filtered[0].createdAt,
-        generatedAt: filtered[0].generatedAt,
-        parsedDate: TicketsService.toDate(filtered[0].generatedAt || filtered[0].createdAt),
-      } : null,
+    console.log("📊 Données du graphique (multi):", {
+      selectedEventIds: selectedEventIds.value,
+      labelsCount: sortedLabels.length,
     });
   }
 
-  return {
-    labels: sortedKeys,
-    datasets: [
-      {
-        label: "Ventes cumulées",
+  // Construire les datasets par événement selon les options
+  const colorPalette = [
+    { border: "rgb(59, 130, 246)", background: "rgba(59, 130, 246, 0.1)" }, // blue
+    { border: "rgb(34, 197, 94)", background: "rgba(34, 197, 94, 0.1)" },  // green
+    { border: "rgb(234, 179, 8)", background: "rgba(234, 179, 8, 0.1)" },  // amber
+    { border: "rgb(244, 63, 94)", background: "rgba(244, 63, 94, 0.1)" },  // rose
+    { border: "rgb(99, 102, 241)", background: "rgba(99, 102, 241, 0.1)" }, // indigo
+  ];
+  const datasets = [];
+
+  groupEntries.forEach(([eventId, evTickets], idx) => {
+    const hourlyData = perEventHourly.get(eventId) || {};
+    // Construire la série horaire alignée sur les labels globaux
+    const hourlyCounts = sortedLabels.map((label) => (hourlyData[label]?.count ?? 0));
+    // Construire la série cumulée
+    const cumulativeData = [];
+    let acc = 0;
+    hourlyCounts.forEach((c) => { acc += c; cumulativeData.push(acc); });
+
+    const colors = colorPalette[idx % colorPalette.length];
+    const eventName = uniqueEvents.value.find((e) => e.id === eventId)?.name || `Événement ${eventId}`;
+
+    if (props.showCumulative) {
+      datasets.push({
+        label: `Ventes cumulées — ${eventName}`,
         data: cumulativeData,
-        borderColor: "rgb(59, 130, 246)",
-        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        borderColor: colors.border,
+        backgroundColor: colors.background,
         fill: true,
-        tension: 0.1, // Réduire la tension pour des lignes plus droites
-        pointRadius: pointSize,
-        pointHoverRadius: 7,
-        pointBackgroundColor: "rgb(59, 130, 246)",
-        pointBorderColor: "#fff",
-        pointBorderWidth: 2,
-        showLine: true, // Forcer l'affichage de la ligne
-        spanGaps: false,
-      },
-      {
-        label: "Ventes par heure",
-        data: hourlyCounts,
-        borderColor: "rgb(34, 197, 94)",
-        backgroundColor: "rgba(34, 197, 94, 0.1)",
-        fill: false,
         tension: 0.1,
         pointRadius: pointSize,
         pointHoverRadius: 7,
-        pointBackgroundColor: "rgb(34, 197, 94)",
+        pointBackgroundColor: colors.border,
         pointBorderColor: "#fff",
         pointBorderWidth: 2,
         showLine: true,
         spanGaps: false,
-      },
-    ],
+      });
+    }
+    if (props.showHourly) {
+      datasets.push({
+        label: `Ventes par heure — ${eventName}`,
+        data: hourlyCounts,
+        borderColor: colors.border,
+        backgroundColor: colors.background,
+        fill: false,
+        tension: 0.1,
+        pointRadius: pointSize,
+        pointHoverRadius: 7,
+        pointBackgroundColor: colors.border,
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        showLine: true,
+        spanGaps: false,
+      });
+    }
+  });
+
+  return {
+    labels: sortedLabels,
+    datasets,
   };
 });
 
@@ -288,11 +285,6 @@ const chartOptions = {
   },
 };
 
-function onEventChange() {
-  const event = uniqueEvents.value.find((e) => e.id === selectedEventId.value);
-  selectedEventName.value = event ? event.name : "";
-}
-
 function setupSubscription() {
   if (unsubscribe.value) {
     unsubscribe.value();
@@ -301,37 +293,24 @@ function setupSubscription() {
   loading.value = true;
   error.value = null;
 
-  if (selectedEventId.value) {
-    unsubscribe.value = TicketsService.subscribeToEventTickets(
-      selectedEventId.value,
-      (newTickets, err) => {
-        if (err) {
-          error.value = err.message;
-          loading.value = false;
-        } else {
-          tickets.value = newTickets;
-          loading.value = false;
-        }
+  // En mode multi-sélection, on s'abonne à tous les tickets pour simplicité,
+  // puis on filtre côté client (évite multiplexer plusieurs abonnements simultanés).
+  unsubscribe.value = TicketsService.subscribeToAllTickets(
+    (newTickets, err) => {
+      if (err) {
+        error.value = err.message;
+        loading.value = false;
+      } else {
+        tickets.value = newTickets;
+        loading.value = false;
       }
-    );
-  } else {
-    unsubscribe.value = TicketsService.subscribeToAllTickets(
-      (newTickets, err) => {
-        if (err) {
-          error.value = err.message;
-          loading.value = false;
-        } else {
-          tickets.value = newTickets;
-          loading.value = false;
-        }
-      }
-    );
-  }
+    }
+  );
 }
 
-watch(selectedEventId, () => {
-  setupSubscription();
-});
+watch(selectedEventIds, () => {
+  // Pas besoin de refaire l'abonnement, on filtre côté client.
+}, { deep: true });
 
 onMounted(() => {
   setupSubscription();

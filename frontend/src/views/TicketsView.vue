@@ -7,6 +7,7 @@ import { db } from "../firebase";
 const tickets = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const slowLoad = ref(false);
 
 // helper format prix
 function formatPrice(amount, currency) {
@@ -19,15 +20,13 @@ onMounted(async () => {
   loading.value = true;
   error.value = null;
 
-  // Timeout de secours pour éviter "Chargement..." infini (augmenté à 30 secondes)
-  const TIMEOUT_MS = 30000;
+  // Indicateur "lent" ultra court sans interrompre la requête (1s)
+  const TIMEOUT_MS = 1000;
+  const TIMEOUT_SECONDS = Math.ceil(TIMEOUT_MS / 1000);
   const timeoutId = setTimeout(() => {
     if (loading.value) {
-      console.error("⏱️ Timeout: lecture tickets trop longue (>30s)");
-      loading.value = false;
-      error.value =
-        "Timeout: impossible de charger les tickets après 30 secondes. " +
-        "Vérifiez votre connexion internet, les règles de sécurité Firestore, et la console du navigateur pour plus de détails.";
+      console.warn(`⏱️ Chargement plus long que prévu (> ${TIMEOUT_SECONDS}s), on continue d'attendre…`);
+      slowLoad.value = true; // on n'arrête PAS la requête et on n'affiche PAS d'erreur
     }
   }, TIMEOUT_MS);
 
@@ -38,7 +37,7 @@ onMounted(async () => {
 
     console.log("🔍 Début de la récupération des tickets depuis Firestore...");
     console.log("📊 Collection: 'tickets'");
-    console.log("⏱️ Timeout configuré: 30 secondes");
+    console.log(`⏱️ Indicateur lenteur après: ${TIMEOUT_SECONDS} seconde(s)`);
     console.log("🔗 Configuration Firebase:", {
       projectId: db.app.options.projectId,
       databaseId: db._delegate?.databaseId || "default",
@@ -181,11 +180,12 @@ onMounted(async () => {
       Retour à l’accueil
     </router-link>
 
-    <div v-if="loading" class="mt-4">Chargement des tickets…</div>
-
-    <div v-else-if="error" class="mt-4 text-red-600">
-      Erreur : {{ error }}
+    <div v-if="loading" class="mt-4">
+      Chargement des tickets…
+      <span v-if="slowLoad" class="ml-2 text-sm text-gray-500">c'est un peu long, merci de patienter</span>
     </div>
+
+    <div v-else-if="error" class="mt-4 text-red-600">Erreur : {{ error }}</div>
 
     <table v-else class="mt-4 border-collapse w-full">
       <thead>
