@@ -2,29 +2,10 @@
   <div class="bg-white p-6 rounded-lg shadow-md">
     <h2 class="text-xl font-bold mb-4">Localisation géographique des clients</h2>
     
-    <div class="mb-4">
-      <label class="block text-sm font-medium mb-2">Filtrer par date de session :</label>
-      <input 
-        type="date" 
-        v-model="selectedDate" 
-        @change="onDateChange"
-        class="border rounded px-3 py-2"
-      />
-      <button 
-        @click="clearFilter"
-        class="ml-2 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-      >
-        Afficher tout
-      </button>
-    </div>
-
-    <div v-if="loading" class="text-center py-8">Chargement des données...</div>
-    <div v-else-if="error" class="text-red-600 py-8">Erreur : {{ error }}</div>
-    <div v-else>
+    <div>
       <div ref="mapContainer" id="map" class="w-full" style="height: 500px"></div>
       <div class="mt-4 text-sm text-gray-600">
         <p>Total de clients localisés : {{ localizedTickets.length }}</p>
-        <p v-if="selectedDate">Pour la date : {{ selectedDate }}</p>
       </div>
     </div>
   </div>
@@ -34,7 +15,6 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { TicketsService } from "../services/ticketsService";
 
 // Fix pour les icônes Leaflet avec Vite
 import iconUrl from "leaflet/dist/images/marker-icon.png";
@@ -48,26 +28,19 @@ L.Icon.Default.mergeOptions({
   shadowUrl: shadowUrl,
 });
 
-const tickets = ref([]);
-const loading = ref(true);
-const error = ref(null);
-const selectedDate = ref("");
-const unsubscribe = ref(null);
+const props = defineProps({
+  tickets: { type: Array, default: () => [] }
+});
+
 const mapContainer = ref(null);
 let map = null;
 let markers = [];
 
 // Filtrer les tickets avec localisation (utiliser buyerPostcode du code postal de l'acheteur)
 const localizedTickets = computed(() => {
-  let filtered = tickets.value.filter(
+  return props.tickets.filter(
     (ticket) => ticket.buyerPostcode && ticket.buyerPostcode.trim() !== ""
   );
-
-  if (selectedDate.value) {
-    filtered = filtered.filter((ticket) => ticket.sessionDate === selectedDate.value);
-  }
-
-  return filtered;
 });
 
 // Grouper par code postal de l'acheteur (buyerPostcode) pour éviter trop de marqueurs
@@ -153,65 +126,6 @@ async function updateMap() {
   }
 }
 
-function onDateChange() {
-  nextTick(() => {
-    updateMap();
-  });
-}
-
-function clearFilter() {
-  selectedDate.value = "";
-  nextTick(() => {
-    updateMap();
-  });
-}
-
-function setupSubscription() {
-  if (unsubscribe.value) {
-    unsubscribe.value();
-  }
-
-  loading.value = true;
-  error.value = null;
-
-  if (selectedDate.value) {
-    unsubscribe.value = TicketsService.subscribeToSessionTickets(
-      selectedDate.value,
-      (newTickets, err) => {
-        if (err) {
-          error.value = err.message;
-          loading.value = false;
-        } else {
-          tickets.value = newTickets;
-          loading.value = false;
-          nextTick(() => {
-            updateMap();
-          });
-        }
-      }
-    );
-  } else {
-    unsubscribe.value = TicketsService.subscribeToAllTickets(
-      (newTickets, err) => {
-        if (err) {
-          error.value = err.message;
-          loading.value = false;
-        } else {
-          tickets.value = newTickets;
-          loading.value = false;
-          nextTick(() => {
-            updateMap();
-          });
-        }
-      }
-    );
-  }
-}
-
-watch(selectedDate, () => {
-  setupSubscription();
-});
-
 function initializeMap() {
   if (!mapContainer.value || map) return;
   
@@ -225,8 +139,8 @@ function initializeMap() {
 }
 
 // Watcher pour initialiser la carte quand l'élément est disponible
-watch([loading, mapContainer], () => {
-  if (!loading.value && mapContainer.value && !map) {
+watch(mapContainer, () => {
+  if (mapContainer.value && !map) {
     nextTick(() => {
       // Vérifier que l'élément est bien dans le DOM
       if (mapContainer.value && mapContainer.value.offsetParent !== null) {
@@ -239,13 +153,19 @@ watch([loading, mapContainer], () => {
   }
 }, { immediate: true, flush: 'post' });
 
+// Watcher pour mettre à jour la carte quand les tickets changent
+watch(() => props.tickets, () => {
+  if (map) {
+    updateMap();
+  }
+}, { deep: true });
+
 onMounted(async () => {
   await nextTick();
-  setupSubscription();
   
   // Tentative supplémentaire d'initialisation après un court délai
   setTimeout(() => {
-    if (!map && mapContainer.value && !loading.value) {
+    if (!map && mapContainer.value) {
       initializeMap();
       if (map) {
         updateMap();
@@ -255,9 +175,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  if (unsubscribe.value) {
-    unsubscribe.value();
-  }
   if (map) {
     map.remove();
   }

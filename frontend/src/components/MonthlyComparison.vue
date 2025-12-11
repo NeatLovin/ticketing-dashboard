@@ -6,7 +6,6 @@
       <label class="block text-sm font-medium mb-2">Sélectionner une année :</label>
       <select 
         v-model="selectedYear" 
-        @change="onYearChange"
         class="border rounded px-3 py-2"
       >
         <option v-for="year in availableYears" :key="year" :value="year">
@@ -15,9 +14,7 @@
       </select>
     </div>
 
-    <div v-if="loading" class="text-center py-8">Chargement des données...</div>
-    <div v-else-if="error" class="text-red-600 py-8">Erreur : {{ error }}</div>
-    <div v-else>
+    <div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div class="bg-blue-50 p-4 rounded-lg">
           <div class="text-sm text-gray-600 mb-1">Année {{ selectedYear }}</div>
@@ -63,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch } from "vue";
 import { Bar, Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -89,36 +86,45 @@ ChartJS.register(
   Legend
 );
 
-const tickets = ref([]);
-const loading = ref(true);
-const error = ref(null);
+const props = defineProps({
+  tickets: { type: Array, default: () => [] }
+});
+
 const selectedYear = ref(new Date().getFullYear());
-const unsubscribe = ref(null);
 
 // Calculer les années disponibles
 const availableYears = computed(() => {
   const years = new Set();
-  tickets.value.forEach((ticket) => {
+  props.tickets.forEach((ticket) => {
     const date = TicketsService.toDate(ticket.createdAt);
     if (date) {
       years.add(date.getFullYear());
     }
   });
+  // Ajouter l'année courante si pas de données
+  if (years.size === 0) years.add(new Date().getFullYear());
   return Array.from(years).sort((a, b) => b - a);
+});
+
+// Mettre à jour l'année sélectionnée si elle n'est pas dans la liste
+watch(availableYears, (years) => {
+  if (years.length > 0 && !years.includes(selectedYear.value)) {
+    selectedYear.value = years[0];
+  }
 });
 
 const previousYear = computed(() => selectedYear.value - 1);
 
 // Filtrer les tickets par année
 const currentYearTickets = computed(() => {
-  return tickets.value.filter((ticket) => {
+  return props.tickets.filter((ticket) => {
     const date = TicketsService.toDate(ticket.createdAt);
     return date && date.getFullYear() === selectedYear.value;
   });
 });
 
 const previousYearTickets = computed(() => {
-  return tickets.value.filter((ticket) => {
+  return props.tickets.filter((ticket) => {
     const date = TicketsService.toDate(ticket.createdAt);
     return date && date.getFullYear() === previousYear.value;
   });
@@ -263,41 +269,6 @@ const revenueChartOptions = {
     },
   },
 };
-
-function onYearChange() {
-  // La logique est gérée par les computed properties
-}
-
-function setupSubscription() {
-  if (unsubscribe.value) {
-    unsubscribe.value();
-  }
-
-  loading.value = true;
-  error.value = null;
-
-  unsubscribe.value = TicketsService.subscribeToAllTickets(
-    (newTickets, err) => {
-      if (err) {
-        error.value = err.message;
-        loading.value = false;
-      } else {
-        tickets.value = newTickets;
-        loading.value = false;
-      }
-    }
-  );
-}
-
-onMounted(() => {
-  setupSubscription();
-});
-
-onUnmounted(() => {
-  if (unsubscribe.value) {
-    unsubscribe.value();
-  }
-});
 </script>
 
 <style scoped>

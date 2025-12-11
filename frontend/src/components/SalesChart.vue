@@ -1,31 +1,15 @@
 <template>
   <div class="bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-xl font-bold mb-4">Évolution des ventes - {{ selectedEventName || "Tous les événements" }}</h2>
+    <h2 class="text-xl font-bold mb-4">Évolution des ventes</h2>
     
-    <div class="mb-4">
-      <label class="block text-sm font-medium mb-2">Sélectionner un ou plusieurs événements :</label>
-      <select 
-        v-model="selectedEventIds" 
-        multiple
-        class="border rounded px-3 py-2 w-full max-w-md h-40"
-      >
-        <option v-for="event in uniqueEvents" :key="event.id" :value="event.id">
-          {{ event.name }} ({{ event.date }})
-        </option>
-      </select>
-      <p class="mt-2 text-xs text-gray-500">Astuce: maintenez Ctrl/Cmd pour sélectionner plusieurs éléments.</p>
-    </div>
-
-    <div v-if="loading" class="text-center py-8">Chargement des données...</div>
-    <div v-else-if="error" class="text-red-600 py-8">Erreur : {{ error }}</div>
-    <div v-else class="relative" style="height: 400px">
+    <div class="relative" style="height: 400px">
       <Line :data="chartData" :options="chartOptions" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { computed } from "vue";
 import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -51,22 +35,17 @@ ChartJS.register(
   Filler
 );
 
-// Props pour afficher/masquer les courbes
+// Props
 const props = defineProps({
+  tickets: { type: Array, default: () => [] },
   showCumulative: { type: Boolean, default: true },
   showHourly: { type: Boolean, default: true },
 });
 
-const tickets = ref([]);
-const loading = ref(true);
-const error = ref(null);
-const selectedEventIds = ref([]);
-const unsubscribe = ref(null);
-
-// Extraire les événements uniques
+// Extraire les événements uniques pour les noms
 const uniqueEvents = computed(() => {
   const eventsMap = new Map();
-  tickets.value.forEach((ticket) => {
+  props.tickets.forEach((ticket) => {
     if (ticket.eventId && ticket.eventName) {
       const key = `${ticket.eventId}`;
       if (!eventsMap.has(key)) {
@@ -81,13 +60,11 @@ const uniqueEvents = computed(() => {
   return Array.from(eventsMap.values()).sort((a, b) => b.date.localeCompare(a.date));
 });
 
-// Grouper les tickets par événement, en appliquant la sélection multiple si présente
+// Grouper les tickets par événement
 const ticketsByEvent = computed(() => {
   const groups = new Map();
-  const selectionActive = Array.isArray(selectedEventIds.value) && selectedEventIds.value.length > 0;
-  tickets.value.forEach((t) => {
+  props.tickets.forEach((t) => {
     if (!t.eventId) return;
-    if (selectionActive && !selectedEventIds.value.includes(t.eventId)) return;
     const key = t.eventId;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(t);
@@ -103,70 +80,52 @@ const chartData = computed(() => {
   if (groupEntries.length === 0) {
     return {
       labels: [],
-      datasets: [
-        {
-          label: "Ventes cumulées",
-          data: [],
-          borderColor: "rgb(59, 130, 246)",
-          backgroundColor: "rgba(59, 130, 246, 0.1)",
-          fill: true,
-          tension: 0.4,
-        },
-        {
-          label: "Ventes par heure",
-          data: [],
-          borderColor: "rgb(34, 197, 94)",
-          backgroundColor: "rgba(34, 197, 94, 0.1)",
-          fill: false,
-          tension: 0.4,
-        },
-      ],
+      datasets: [],
     };
   }
   
-  // Construire les axes horaires par événement et une union triée des labels
-  const perEventHourly = new Map(); // Map<eventId, Record<label,{count,timestamp}>>
-  const labelSet = new Map(); // label -> timestamp
-  
+  // 1. Calculer les jours relatifs (J-x) pour chaque ticket et trouver le min global
+  const perEventDaily = new Map(); // Map<eventId, Map<dayIndex, count>>
+  let minDayIndex = 0;
+
   groupEntries.forEach(([eventId, evTickets]) => {
-    const hourlyData = {};
+    const dailyData = new Map(); // dayIndex -> count
+    
     evTickets.forEach((ticket) => {
-      const ticketDate = ticket.generatedAt || ticket.createdAt;
-      const date = TicketsService.toDate(ticketDate);
-      if (date && !isNaN(date.getTime())) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const hour = String(date.getHours()).padStart(2, "0");
-        const hourKey = `${day}/${month} ${hour}:00`;
-        const ts = new Date(year, date.getMonth(), date.getDate(), date.getHours()).getTime();
-        if (!hourlyData[hourKey]) {
-          hourlyData[hourKey] = { count: 0, timestamp: ts };
+      if (!ticket.sessionDate) return;
+      
+      const eventDate = new Date(ticket.sessionDate);
+      const saleDate = TicketsService.toDate(ticket.generatedAt || ticket.createdAt);
+      
+      if (eventDate && saleDate && !isNaN(eventDate.getTime()) && !isNaN(saleDate.getTime())) {
+        // Normaliser à minuit pour comparer les jours
+        const eDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+        const sDate = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate());
+        
+        // Différence en jours (sale - event)
+        // Ex: Vente le 1er, Event le 10. Diff = -9 jours.
+        const diffTime = sDate.getTime() - eDate.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
+        
+        // On ne s'intéresse qu'aux ventes avant ou le jour même (<= 0)
+        if (diffDays <= 0) {
+          if (diffDays < minDayIndex) minDayIndex = diffDays;
+          
+          const currentCount = dailyData.get(diffDays) || 0;
+          dailyData.set(diffDays, currentCount + 1);
         }
-        hourlyData[hourKey].count++;
-        if (!labelSet.has(hourKey)) labelSet.set(hourKey, ts);
       }
     });
-    perEventHourly.set(eventId, hourlyData);
+    perEventDaily.set(eventId, dailyData);
   });
 
-  const sortedLabels = Array.from(labelSet.entries())
-    .sort((a, b) => a[1] - b[1])
-    .map(([label]) => label);
-
-  // Déterminer la taille des points selon le nombre de labels
-  const numPoints = sortedLabels.length;
-  const pointSize = numPoints <= 10 ? 5 : 3;
-
-  // Debug
-  if (import.meta.env.DEV) {
-    console.log("📊 Données du graphique (multi):", {
-      selectedEventIds: selectedEventIds.value,
-      labelsCount: sortedLabels.length,
-    });
+  // 2. Générer les labels de minDayIndex à 0
+  const labels = [];
+  for (let i = minDayIndex; i <= 0; i++) {
+    labels.push(`J${i}`); // Ex: J-65, J-0
   }
 
-  // Construire les datasets par événement selon les options
+  // 3. Construire les datasets
   const colorPalette = [
     { border: "rgb(59, 130, 246)", background: "rgba(59, 130, 246, 0.1)" }, // blue
     { border: "rgb(34, 197, 94)", background: "rgba(34, 197, 94, 0.1)" },  // green
@@ -176,17 +135,26 @@ const chartData = computed(() => {
   ];
   const datasets = [];
 
+  // Déterminer la taille des points
+  const numPoints = labels.length;
+  const pointSize = numPoints <= 20 ? 4 : 2;
+
   groupEntries.forEach(([eventId, evTickets], idx) => {
-    const hourlyData = perEventHourly.get(eventId) || {};
-    // Construire la série horaire alignée sur les labels globaux
-    const hourlyCounts = sortedLabels.map((label) => (hourlyData[label]?.count ?? 0));
-    // Construire la série cumulée
+    const dailyData = perEventDaily.get(eventId);
+    const eventName = uniqueEvents.value.find((e) => e.id === eventId)?.name || `Événement ${eventId}`;
+    const colors = colorPalette[idx % colorPalette.length];
+
+    // Construire les données alignées sur les labels
+    const dailyCounts = [];
     const cumulativeData = [];
     let acc = 0;
-    hourlyCounts.forEach((c) => { acc += c; cumulativeData.push(acc); });
 
-    const colors = colorPalette[idx % colorPalette.length];
-    const eventName = uniqueEvents.value.find((e) => e.id === eventId)?.name || `Événement ${eventId}`;
+    for (let i = minDayIndex; i <= 0; i++) {
+      const count = dailyData.get(i) || 0;
+      dailyCounts.push(count);
+      acc += count;
+      cumulativeData.push(acc);
+    }
 
     if (props.showCumulative) {
       datasets.push({
@@ -197,7 +165,7 @@ const chartData = computed(() => {
         fill: true,
         tension: 0.1,
         pointRadius: pointSize,
-        pointHoverRadius: 7,
+        pointHoverRadius: 6,
         pointBackgroundColor: colors.border,
         pointBorderColor: "#fff",
         pointBorderWidth: 2,
@@ -207,25 +175,26 @@ const chartData = computed(() => {
     }
     if (props.showHourly) {
       datasets.push({
-        label: `Ventes par heure — ${eventName}`,
-        data: hourlyCounts,
+        label: `Ventes journalières — ${eventName}`,
+        data: dailyCounts,
         borderColor: colors.border,
         backgroundColor: colors.background,
         fill: false,
         tension: 0.1,
         pointRadius: pointSize,
-        pointHoverRadius: 7,
+        pointHoverRadius: 6,
         pointBackgroundColor: colors.border,
         pointBorderColor: "#fff",
         pointBorderWidth: 2,
         showLine: true,
         spanGaps: false,
+        borderDash: [5, 5], // Pointillés pour différencier
       });
     }
   });
 
   return {
-    labels: sortedLabels,
+    labels,
     datasets,
   };
 });
@@ -275,52 +244,17 @@ const chartOptions = {
     x: {
       title: {
         display: true,
-        text: "Date et heure",
+        text: "Jours avant l'événement",
       },
       ticks: {
         maxRotation: 45,
-        minRotation: 45,
+        minRotation: 0,
+        autoSkip: true,
+        maxTicksLimit: 20,
       },
     },
   },
 };
-
-function setupSubscription() {
-  if (unsubscribe.value) {
-    unsubscribe.value();
-  }
-
-  loading.value = true;
-  error.value = null;
-
-  // En mode multi-sélection, on s'abonne à tous les tickets pour simplicité,
-  // puis on filtre côté client (évite multiplexer plusieurs abonnements simultanés).
-  unsubscribe.value = TicketsService.subscribeToAllTickets(
-    (newTickets, err) => {
-      if (err) {
-        error.value = err.message;
-        loading.value = false;
-      } else {
-        tickets.value = newTickets;
-        loading.value = false;
-      }
-    }
-  );
-}
-
-watch(selectedEventIds, () => {
-  // Pas besoin de refaire l'abonnement, on filtre côté client.
-}, { deep: true });
-
-onMounted(() => {
-  setupSubscription();
-});
-
-onUnmounted(() => {
-  if (unsubscribe.value) {
-    unsubscribe.value();
-  }
-});
 </script>
 
 <style scoped>
