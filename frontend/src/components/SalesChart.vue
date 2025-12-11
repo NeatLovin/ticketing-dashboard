@@ -40,6 +40,7 @@ const props = defineProps({
   tickets: { type: Array, default: () => [] },
   showCumulative: { type: Boolean, default: true },
   showHourly: { type: Boolean, default: true },
+  viewMode: { type: String, default: 'daily' },
 });
 
 // Extraire les événements uniques pour les noms
@@ -84,12 +85,12 @@ const chartData = computed(() => {
     };
   }
   
-  // 1. Calculer les jours relatifs (J-x) pour chaque ticket et trouver le min global
-  const perEventDaily = new Map(); // Map<eventId, Map<dayIndex, count>>
-  let minDayIndex = 0;
+  // 1. Calculer les index temporels (J-x ou S-x) pour chaque ticket et trouver le min global
+  const perEventData = new Map(); // Map<eventId, Map<timeIndex, count>>
+  let minIndex = 0;
 
   groupEntries.forEach(([eventId, evTickets]) => {
-    const dailyData = new Map(); // dayIndex -> count
+    const timeData = new Map(); // timeIndex -> count
     
     evTickets.forEach((ticket) => {
       if (!ticket.sessionDate) return;
@@ -103,26 +104,33 @@ const chartData = computed(() => {
         const sDate = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate());
         
         // Différence en jours (sale - event)
-        // Ex: Vente le 1er, Event le 10. Diff = -9 jours.
         const diffTime = sDate.getTime() - eDate.getTime();
         const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
         
+        // Calculer l'index selon le mode
+        let timeIndex = diffDays;
+        if (props.viewMode === 'weekly') {
+          // Semaine 0 = [J-6, J0], Semaine -1 = [J-13, J-7], etc.
+          // Ou simplement division par 7
+          timeIndex = Math.floor(diffDays / 7);
+        }
+
         // On ne s'intéresse qu'aux ventes avant ou le jour même (<= 0)
-        if (diffDays <= 0) {
-          if (diffDays < minDayIndex) minDayIndex = diffDays;
+        if (timeIndex <= 0) {
+          if (timeIndex < minIndex) minIndex = timeIndex;
           
-          const currentCount = dailyData.get(diffDays) || 0;
-          dailyData.set(diffDays, currentCount + 1);
+          const currentCount = timeData.get(timeIndex) || 0;
+          timeData.set(timeIndex, currentCount + 1);
         }
       }
     });
-    perEventDaily.set(eventId, dailyData);
+    perEventData.set(eventId, timeData);
   });
 
-  // 2. Générer les labels de minDayIndex à 0
+  // 2. Générer les labels de minIndex à 0
   const labels = [];
-  for (let i = minDayIndex; i <= 0; i++) {
-    labels.push(`J${i}`); // Ex: J-65, J-0
+  for (let i = minIndex; i <= 0; i++) {
+    labels.push(props.viewMode === 'weekly' ? `S${i}` : `J${i}`);
   }
 
   // 3. Construire les datasets
@@ -140,18 +148,18 @@ const chartData = computed(() => {
   const pointSize = numPoints <= 20 ? 4 : 2;
 
   groupEntries.forEach(([eventId, evTickets], idx) => {
-    const dailyData = perEventDaily.get(eventId);
+    const timeData = perEventData.get(eventId);
     const eventName = uniqueEvents.value.find((e) => e.id === eventId)?.name || `Événement ${eventId}`;
     const colors = colorPalette[idx % colorPalette.length];
 
     // Construire les données alignées sur les labels
-    const dailyCounts = [];
+    const counts = [];
     const cumulativeData = [];
     let acc = 0;
 
-    for (let i = minDayIndex; i <= 0; i++) {
-      const count = dailyData.get(i) || 0;
-      dailyCounts.push(count);
+    for (let i = minIndex; i <= 0; i++) {
+      const count = timeData.get(i) || 0;
+      counts.push(count);
       acc += count;
       cumulativeData.push(acc);
     }
@@ -175,8 +183,8 @@ const chartData = computed(() => {
     }
     if (props.showHourly) {
       datasets.push({
-        label: `Ventes journalières — ${eventName}`,
-        data: dailyCounts,
+        label: `Ventes ${props.viewMode === 'weekly' ? 'hebdomadaires' : 'journalières'} — ${eventName}`,
+        data: counts,
         borderColor: colors.border,
         backgroundColor: colors.background,
         fill: false,
@@ -199,7 +207,7 @@ const chartData = computed(() => {
   };
 });
 
-const chartOptions = {
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   interaction: {
@@ -244,7 +252,7 @@ const chartOptions = {
     x: {
       title: {
         display: true,
-        text: "Jours avant l'événement",
+        text: props.viewMode === 'weekly' ? "Semaines avant l'événement" : "Jours avant l'événement",
       },
       ticks: {
         maxRotation: 45,
@@ -254,7 +262,7 @@ const chartOptions = {
       },
     },
   },
-};
+}));
 </script>
 
 <style scoped>

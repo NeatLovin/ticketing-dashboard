@@ -16,20 +16,38 @@
       <div v-else class="space-y-6">
         <!-- Courbes de vente en temps réel -->
         <div class="bg-white p-4 rounded-lg shadow">
-          <div class="mb-3 flex items-center gap-4">
-            <label class="inline-flex items-center gap-2">
-              <input type="checkbox" v-model="showCumulative" />
-              <span>Ventes cumulées</span>
-            </label>
-            <label class="inline-flex items-center gap-2">
-              <input type="checkbox" v-model="showHourly" />
-              <span>Ventes par heure</span>
-            </label>
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" v-model="showCumulative" class="rounded text-blue-600 focus:ring-blue-500" />
+                <span class="text-sm text-gray-700">Ventes cumulées</span>
+              </label>
+              <label class="inline-flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" v-model="showHourly" class="rounded text-blue-600 focus:ring-blue-500" />
+                <span class="text-sm text-gray-700">Ventes par période</span>
+              </label>
+            </div>
+            
+            <div class="flex items-center bg-gray-100 p-1 rounded-lg">
+              <button 
+                @click="viewMode = 'daily'"
+                :class="['px-3 py-1.5 rounded-md text-sm transition-all', viewMode === 'daily' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700']"
+              >
+                Journalier
+              </button>
+              <button 
+                @click="viewMode = 'weekly'"
+                :class="['px-3 py-1.5 rounded-md text-sm transition-all', viewMode === 'weekly' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700']"
+              >
+                Hebdomadaire
+              </button>
+            </div>
           </div>
           <SalesChart 
             :tickets="filteredTickets" 
             :show-cumulative="showCumulative" 
             :show-hourly="showHourly" 
+            :view-mode="viewMode"
           />
         </div>
         
@@ -58,6 +76,7 @@ import { TicketsService } from "../services/ticketsService";
 // Par défaut, afficher les deux courbes
 const showCumulative = ref(true);
 const showHourly = ref(true);
+const viewMode = ref('daily');
 
 const allTickets = ref([]);
 const loading = ref(true);
@@ -84,11 +103,8 @@ const uniqueCategories = computed(() => {
 });
 
 const filteredTickets = computed(() => {
-  // Si aucun filtre n'est actif, ne rien afficher
-  if (
-    filters.value.selectedEvents.length === 0 &&
-    filters.value.selectedCategories.length === 0
-  ) {
+  // Si aucun événement n'est sélectionné, ne rien afficher
+  if (filters.value.selectedEvents.length === 0) {
     return [];
   }
 

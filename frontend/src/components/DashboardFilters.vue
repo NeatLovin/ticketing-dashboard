@@ -146,6 +146,7 @@ const showEventsDropdown = ref(false);
 const showCategoriesDropdown = ref(false);
 const eventsDropdownRef = ref(null);
 const categoriesDropdownRef = ref(null);
+const hasInitializedCategories = ref(false);
 
 const filteredEvents = computed(() => {
   if (!searchQuery.value) return props.events;
@@ -154,6 +155,14 @@ const filteredEvents = computed(() => {
     event.name.toLowerCase().includes(query)
   );
 });
+
+// Initialize categories selection when data is available
+watch(() => props.categories, (newVal) => {
+  if (newVal.length > 0 && !hasInitializedCategories.value) {
+    selectedCategories.value = [...newVal];
+    hasInitializedCategories.value = true;
+  }
+}, { immediate: true });
 
 const areAllEventsSelected = computed(() => {
   if (filteredEvents.value.length === 0) return false;
@@ -191,7 +200,7 @@ function toggleCategory(category) {
 
 function resetFilters() {
   selectedEvents.value = [];
-  selectedCategories.value = [];
+  selectedCategories.value = [...props.categories];
   searchQuery.value = '';
 }
 
