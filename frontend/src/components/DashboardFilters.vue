@@ -30,8 +30,36 @@
             </span>
           </button>
           <div v-if="showEventsDropdown" class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+            <!-- Search Input -->
+            <div class="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="Rechercher un événement..." 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                @click.stop
+              />
+            </div>
+
+            <!-- Select All Option -->
             <div 
-              v-for="event in events" 
+              class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 border-b border-gray-100"
+              @click="toggleAllEvents"
+            >
+              <div class="flex items-center">
+                <input 
+                  type="checkbox" 
+                  :checked="areAllEventsSelected"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span class="ml-3 block truncate font-semibold text-blue-600">
+                  {{ areAllEventsSelected ? 'Tout désélectionner' : 'Tout sélectionner' }}
+                </span>
+              </div>
+            </div>
+
+            <div 
+              v-for="event in filteredEvents" 
               :key="event.name" 
               class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50"
               @click="toggleEvent(event.name)"
@@ -112,11 +140,38 @@ const emit = defineEmits(['update:filters']);
 
 const selectedEvents = ref([]);
 const selectedCategories = ref([]);
+const searchQuery = ref('');
 
 const showEventsDropdown = ref(false);
 const showCategoriesDropdown = ref(false);
 const eventsDropdownRef = ref(null);
 const categoriesDropdownRef = ref(null);
+
+const filteredEvents = computed(() => {
+  if (!searchQuery.value) return props.events;
+  const query = searchQuery.value.toLowerCase();
+  return props.events.filter(event => 
+    event.name.toLowerCase().includes(query)
+  );
+});
+
+const areAllEventsSelected = computed(() => {
+  if (filteredEvents.value.length === 0) return false;
+  return filteredEvents.value.every(e => selectedEvents.value.includes(e.name));
+});
+
+function toggleAllEvents() {
+  if (areAllEventsSelected.value) {
+    // Deselect all visible events
+    const visibleNames = filteredEvents.value.map(e => e.name);
+    selectedEvents.value = selectedEvents.value.filter(name => !visibleNames.includes(name));
+  } else {
+    // Select all visible events
+    const visibleNames = filteredEvents.value.map(e => e.name);
+    const newSelection = new Set([...selectedEvents.value, ...visibleNames]);
+    selectedEvents.value = Array.from(newSelection);
+  }
+}
 
 function toggleEvent(eventName) {
   if (selectedEvents.value.includes(eventName)) {
@@ -137,6 +192,7 @@ function toggleCategory(category) {
 function resetFilters() {
   selectedEvents.value = [];
   selectedCategories.value = [];
+  searchQuery.value = '';
 }
 
 function emitFilters() {
