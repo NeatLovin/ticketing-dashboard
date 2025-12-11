@@ -50,6 +50,9 @@
             :view-mode="viewMode"
           />
         </div>
+
+        <!-- Répartition des ventes -->
+        <TicketsDistributionChart :tickets="filteredTickets" />
         
         <!-- Localisation géographique -->
         <GeographicMap :tickets="filteredTickets" />
@@ -67,6 +70,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import SalesChart from "../components/SalesChart.vue";
+import TicketsDistributionChart from "../components/TicketsDistributionChart.vue";
 import GeographicMap from "../components/GeographicMap.vue";
 import AverageBasket from "../components/AverageBasket.vue";
 import MonthlyComparison from "../components/MonthlyComparison.vue";
