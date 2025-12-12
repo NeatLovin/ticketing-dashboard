@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-4 rounded-lg shadow mb-6 space-y-4">
+  <div class="panel p-4 mb-6 space-y-4">
     <div class="flex justify-between items-center mb-2">
       <h2 class="text-lg font-semibold text-gray-700">Filtres</h2>
       <button 

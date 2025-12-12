@@ -1,31 +1,31 @@
 <template>
-  <div class="bg-white p-6 rounded-lg shadow-md">
+  <div class="panel p-6">
     <h2 class="text-xl font-bold mb-4">Panier moyen</h2>
     
     <div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="bg-blue-50 p-4 rounded-lg">
-          <div class="text-sm text-gray-600 mb-1">Panier moyen</div>
+          <div class="text-sm text-zinc-600 mb-1">Panier moyen</div>
           <div class="text-3xl font-bold text-blue-600">
             {{ averageBasket.toFixed(2) }}
           </div>
-          <div class="text-xs text-gray-500 mt-1">tickets par transaction</div>
+          <div class="text-xs text-zinc-500 mt-1">tickets par transaction</div>
         </div>
         
         <div class="bg-green-50 p-4 rounded-lg">
-          <div class="text-sm text-gray-600 mb-1">Total transactions</div>
+          <div class="text-sm text-zinc-600 mb-1">Total transactions</div>
           <div class="text-3xl font-bold text-green-600">
             {{ totalTransactions }}
           </div>
-          <div class="text-xs text-gray-500 mt-1">transactions</div>
+          <div class="text-xs text-zinc-500 mt-1">transactions</div>
         </div>
         
         <div class="bg-purple-50 p-4 rounded-lg">
-          <div class="text-sm text-gray-600 mb-1">Total tickets</div>
+          <div class="text-sm text-zinc-600 mb-1">Total tickets</div>
           <div class="text-3xl font-bold text-purple-600">
             {{ props.tickets.length }}
           </div>
-          <div class="text-xs text-gray-500 mt-1">tickets vendus</div>
+          <div class="text-xs text-zinc-500 mt-1">tickets vendus</div>
         </div>
       </div>
 

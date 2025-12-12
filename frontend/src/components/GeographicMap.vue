@@ -1,10 +1,10 @@
 <template>
-  <div class="bg-white p-6 rounded-lg shadow-md">
+  <div class="panel p-6">
     <h2 class="text-xl font-bold mb-4">Localisation géographique des clients</h2>
     
     <div>
       <div ref="mapContainer" id="map" class="w-full" style="height: 500px"></div>
-      <div class="mt-4 text-sm text-gray-600">
+      <div class="mt-4 text-sm text-zinc-600">
         <p>Total de clients localisés : {{ localizedTickets.length }}</p>
       </div>
     </div>

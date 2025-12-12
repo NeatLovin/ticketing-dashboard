@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-6 rounded-lg shadow-md">
+  <div class="panel p-6">
     <h2 class="text-xl font-bold mb-4">Répartition des ventes par événement</h2>
     
     <div v-if="hasData" class="flex flex-col md:flex-row h-[350px]">
@@ -17,9 +17,9 @@
               :style="{ backgroundColor: chartData.datasets[0].backgroundColor[index] }"
             ></span>
             <div class="flex-1 min-w-0">
-              <p class="text-gray-700 truncate" :title="label">{{ label }}</p>
+              <p class="text-zinc-700 truncate" :title="label">{{ label }}</p>
             </div>
-            <span class="text-gray-500 text-xs ml-2 font-mono">
+            <span class="text-zinc-500 text-xs ml-2 font-mono">
               {{ chartData.datasets[0].data[index] }}
             </span>
           </li>
@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    <div v-else class="h-[350px] flex items-center justify-center text-gray-500">
+    <div v-else class="h-[350px] flex items-center justify-center text-zinc-500">
       Aucune donnée à afficher
     </div>
   </div>

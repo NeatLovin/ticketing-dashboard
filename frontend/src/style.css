@@ -2,3 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+	html {
+		@apply antialiased;
+	}
+
+	body {
+		@apply bg-zinc-950 text-zinc-100;
+	}
+}
+
+@layer components {
+	.app-shell {
+		@apply min-h-screen;
+	}
+
+	.app-nav {
+		@apply sticky top-0 z-50 border-b border-white/10 bg-zinc-950/80 backdrop-blur;
+	}
+
+	.app-nav-inner {
+		@apply mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-3;
+	}
+
+	.app-brand {
+		@apply flex items-center gap-3 min-w-0;
+	}
+
+	.app-brand-title {
+		@apply text-sm font-semibold tracking-wide uppercase text-zinc-100 truncate;
+	}
+
+	.app-links {
+		@apply flex items-center gap-1 overflow-x-auto;
+	}
+
+	.app-link {
+		@apply px-3 py-2 rounded-lg text-sm font-medium text-zinc-200 hover:text-white hover:bg-white/10 transition whitespace-nowrap;
+	}
+
+	.app-link-active {
+		@apply bg-white/15 text-white;
+	}
+
+	.page {
+		@apply mx-auto max-w-7xl px-4 sm:px-6 py-8;
+	}
+
+	.page-header {
+		@apply mb-6;
+	}
+
+	.page-title {
+		@apply text-3xl font-bold tracking-tight;
+	}
+
+	.page-subtitle {
+		@apply mt-1 text-sm text-zinc-300;
+	}
+
+	.panel {
+		@apply bg-white text-zinc-900 rounded-2xl shadow-sm ring-1 ring-black/5;
+	}
+}
+

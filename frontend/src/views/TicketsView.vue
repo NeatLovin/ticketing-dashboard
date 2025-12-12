@@ -400,9 +400,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="p-4">
+  <main class="page">
+    <div class="page-header">
+      <h1 class="page-title">Tickets</h1>
+      <p class="page-subtitle">Recherche, filtres et tri sur l'ensemble des ventes.</p>
+    </div>
+
+    <div class="panel p-4">
     <div class="flex justify-between items-end mb-4">
-      <h1 class="text-2xl font-bold">Tickets</h1>
+      <h2 class="text-lg font-semibold text-zinc-900">Liste</h2>
 
       <!-- Top Pagination Controls -->
       <div v-if="!loading && tickets.length > 0" class="flex items-center gap-4 text-sm">
@@ -690,6 +696,7 @@ onMounted(async () => {
       <div class="text-gray-500">
         Total: {{ sortedTickets.length }} ticket(s) filtré(s)
       </div>
+    </div>
     </div>
   </main>
 </template>

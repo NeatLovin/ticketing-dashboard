@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-6 rounded-lg shadow-md">
+  <div class="panel p-6">
     <h2 class="text-xl font-bold mb-4">Récapitulation mensuelle - Comparaison année sur année</h2>
     
     <div class="mb-4">

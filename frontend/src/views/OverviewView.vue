@@ -1,21 +1,23 @@
 <template>
-  <main class="min-h-screen bg-gray-100 p-6">
-    <div class="max-w-7xl mx-auto">
-      <h1 class="text-3xl font-bold mb-6">Vue d'ensemble</h1>
+  <main class="page">
+    <div class="page-header">
+      <h1 class="page-title">Vue d'ensemble</h1>
+      <p class="page-subtitle">KPIs clés, top événements et dernières ventes.</p>
+    </div>
 
       <div v-if="loading" class="text-center py-10">
-        <p class="text-gray-500">Chargement des données...</p>
+        <p class="text-zinc-300">Chargement des données...</p>
       </div>
 
       <div v-else class="space-y-6">
         <!-- KPI Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <!-- Total Revenue -->
-          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+          <div class="panel p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-500 uppercase font-semibold">Chiffre d'affaires</p>
-                <p class="text-2xl font-bold text-gray-800">{{ formatCurrency(totalRevenue) }}</p>
+                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Chiffre d'affaires</p>
+                <p class="text-2xl font-bold text-zinc-900">{{ formatCurrency(totalRevenue) }}</p>
               </div>
               <div class="p-3 bg-green-100 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -26,11 +28,11 @@
           </div>
 
           <!-- Total Tickets -->
-          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+          <div class="panel p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-500 uppercase font-semibold">Billets vendus</p>
-                <p class="text-2xl font-bold text-gray-800">{{ totalTickets }}</p>
+                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Billets vendus</p>
+                <p class="text-2xl font-bold text-zinc-900">{{ totalTickets }}</p>
               </div>
               <div class="p-3 bg-blue-100 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,11 +43,11 @@
           </div>
 
           <!-- Total Events -->
-          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
+          <div class="panel p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-500 uppercase font-semibold">Événements</p>
-                <p class="text-2xl font-bold text-gray-800">{{ totalEvents }}</p>
+                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Événements</p>
+                <p class="text-2xl font-bold text-zinc-900">{{ totalEvents }}</p>
               </div>
               <div class="p-3 bg-purple-100 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -56,11 +58,11 @@
           </div>
 
           <!-- Avg Ticket Price -->
-          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-500">
+          <div class="panel p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-500 uppercase font-semibold">Prix moyen billet</p>
-                <p class="text-2xl font-bold text-gray-800">{{ formatCurrency(averageTicketPrice) }}</p>
+                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Prix moyen billet</p>
+                <p class="text-2xl font-bold text-zinc-900">{{ formatCurrency(averageTicketPrice) }}</p>
               </div>
               <div class="p-3 bg-orange-100 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,11 +73,11 @@
           </div>
 
           <!-- Peak Sales Time -->
-          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-pink-500">
+          <div class="panel p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-500 uppercase font-semibold">Pic de ventes</p>
-                <p class="text-2xl font-bold text-gray-800">{{ peakSalesTime }}</p>
+                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Pic de ventes</p>
+                <p class="text-2xl font-bold text-zinc-900">{{ peakSalesTime }}</p>
               </div>
               <div class="p-3 bg-pink-100 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -86,11 +88,11 @@
           </div>
 
           <!-- Avg Lead Time -->
-          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-teal-500">
+          <div class="panel p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-500 uppercase font-semibold">Délai moyen d'achat</p>
-                <p class="text-2xl font-bold text-gray-800">{{ avgLeadTime }} jours</p>
+                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Délai moyen d'achat</p>
+                <p class="text-2xl font-bold text-zinc-900">{{ avgLeadTime }} jours</p>
               </div>
               <div class="p-3 bg-teal-100 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,11 +103,11 @@
           </div>
 
           <!-- Presale Percentage -->
-          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-indigo-500">
+          <div class="panel p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-500 uppercase font-semibold">Prélocations</p>
-                <p class="text-2xl font-bold text-gray-800">{{ presalePercentage }}%</p>
+                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Prélocations</p>
+                <p class="text-2xl font-bold text-zinc-900">{{ presalePercentage }}%</p>
               </div>
               <div class="p-3 bg-indigo-100 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,9 +119,9 @@
           </div>
 
           <!-- Top Locations -->
-          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
+          <div class="panel p-6">
             <div class="flex items-center justify-between mb-2">
-              <p class="text-sm text-gray-500 uppercase font-semibold">Top Localités</p>
+              <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Top Localités</p>
               <div class="p-2 bg-yellow-100 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -129,23 +131,23 @@
             </div>
             <ul class="space-y-1">
               <li v-for="loc in topLocations" :key="loc.zip" class="flex justify-between text-sm">
-                <span class="text-gray-600 font-medium">{{ loc.zip }}</span>
-                <span class="text-gray-800 font-bold">{{ loc.count }}</span>
+                <span class="text-zinc-600 font-medium">{{ loc.zip }}</span>
+                <span class="text-zinc-900 font-bold">{{ loc.count }}</span>
               </li>
-              <li v-if="topLocations.length === 0" class="text-sm text-gray-500">N/A</li>
+              <li v-if="topLocations.length === 0" class="text-sm text-zinc-500">N/A</li>
             </ul>
           </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Top Events -->
-          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="panel overflow-hidden">
             <div class="p-6 border-b border-gray-100">
-              <h2 class="text-xl font-bold text-gray-800">Top Événements (Chiffre d'affaires)</h2>
+              <h2 class="text-xl font-bold text-zinc-900">Top Événements (Chiffre d'affaires)</h2>
             </div>
             <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm text-gray-600">
-                <thead class="bg-gray-50 text-gray-700 uppercase font-semibold">
+              <table class="w-full text-left text-sm text-zinc-600">
+                <thead class="bg-zinc-50 text-zinc-700 uppercase font-semibold">
                   <tr>
                     <th class="px-6 py-3">Événement</th>
                     <th class="px-6 py-3 text-right">Billets</th>
@@ -154,7 +156,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                   <tr v-for="event in topEvents" :key="event.name" class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4 font-medium text-gray-900 truncate max-w-xs" :title="event.name">
+                    <td class="px-6 py-4 font-medium text-zinc-900 truncate max-w-xs" :title="event.name">
                       {{ event.name }}
                     </td>
                     <td class="px-6 py-4 text-right">{{ event.count }}</td>
@@ -163,7 +165,7 @@
                     </td>
                   </tr>
                   <tr v-if="topEvents.length === 0">
-                    <td colspan="3" class="px-6 py-4 text-center text-gray-500">Aucun événement</td>
+                    <td colspan="3" class="px-6 py-4 text-center text-zinc-500">Aucun événement</td>
                   </tr>
                 </tbody>
               </table>
@@ -171,9 +173,9 @@
           </div>
 
           <!-- Recent Sales -->
-          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="panel overflow-hidden">
             <div class="p-6 border-b border-gray-100">
-              <h2 class="text-xl font-bold text-gray-800">Dernières ventes</h2>
+              <h2 class="text-xl font-bold text-zinc-900">Dernières ventes</h2>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-sm text-gray-600">
@@ -212,7 +214,6 @@
           </div>
         </div>
       </div>
-    </div>
   </main>
 </template>
 

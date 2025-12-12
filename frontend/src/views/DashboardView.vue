@@ -1,7 +1,9 @@
 <template>
-  <main class="min-h-screen bg-gray-100 p-6">
-    <div class="max-w-7xl mx-auto">
-      <h1 class="text-3xl font-bold mb-6">Tableaux de bord - Case à Chocs</h1>
+  <main class="page">
+    <div class="page-header">
+      <h1 class="page-title">Tableaux de bord</h1>
+      <p class="page-subtitle">Visualisations temps réel — ventes, répartition, carte, panier moyen.</p>
+    </div>
       
       <DashboardFilters 
         :events="uniqueEvents" 
@@ -10,25 +12,26 @@
       />
 
       <div v-if="loading" class="text-center py-10">
-        <p class="text-gray-500">Chargement des données...</p>
+        <p class="text-zinc-300">Chargement des données...</p>
       </div>
 
       <div v-else class="space-y-6">
         <!-- Courbes de vente en temps réel -->
-        <div class="bg-white p-4 rounded-lg shadow">
-          <div class="mb-3 flex flex-wrap items-center justify-between gap-4">
+        <div class="space-y-3">
+          <div class="panel p-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-4">
               <label class="inline-flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" v-model="showCumulative" class="rounded text-blue-600 focus:ring-blue-500" />
-                <span class="text-sm text-gray-700">Ventes cumulées</span>
+                <span class="text-sm text-zinc-700">Ventes cumulées</span>
               </label>
               <label class="inline-flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" v-model="showHourly" class="rounded text-blue-600 focus:ring-blue-500" />
-                <span class="text-sm text-gray-700">Ventes par période</span>
+                <span class="text-sm text-zinc-700">Ventes par période</span>
               </label>
             </div>
             
-            <div class="flex items-center bg-gray-100 p-1 rounded-lg">
+            <div class="flex items-center bg-zinc-100 p-1 rounded-lg">
               <button 
                 @click="viewMode = 'daily'"
                 :class="['px-3 py-1.5 rounded-md text-sm transition-all', viewMode === 'daily' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700']"
@@ -42,6 +45,7 @@
                 Hebdomadaire
               </button>
             </div>
+          </div>
           </div>
           <SalesChart 
             :tickets="filteredTickets" 
@@ -63,7 +67,6 @@
         <!-- Comparaison mensuelle -->
         <MonthlyComparison :tickets="filteredTickets" />
       </div>
-    </div>
   </main>
 </template>
 

@@ -1,40 +1,26 @@
 <template>
-  <div>
-    <nav class="bg-blue-600 text-white p-4 shadow-md">
-      <div class="max-w-7xl mx-auto flex items-center gap-4">
-        <!-- Logo -->
-        <img src="/cac-logo-white.svg" alt="Logo" class="h-10 w-auto mr-2" />
-        
-        <router-link 
-          to="/" 
-          class="px-4 py-2 rounded hover:bg-blue-700 transition"
-          active-class="bg-blue-800"
-        >
-          Accueil
-        </router-link>
-        <router-link 
-          to="/overview" 
-          class="px-4 py-2 rounded hover:bg-blue-700 transition"
-          active-class="bg-blue-800"
-        >
-          Vue d'ensemble
-        </router-link>
-        <router-link 
-          to="/dashboard" 
-          class="px-4 py-2 rounded hover:bg-blue-700 transition"
-          active-class="bg-blue-800"
-        >
-          Tableaux de bord
-        </router-link>
-        <router-link 
-          to="/tickets" 
-          class="px-4 py-2 rounded hover:bg-blue-700 transition"
-          active-class="bg-blue-800"
-        >
-          Liste des tickets
-        </router-link>
+  <div class="app-shell">
+    <header class="app-nav">
+      <div class="app-nav-inner">
+        <div class="app-brand">
+          <img src="/cac-logo-white.svg" alt="Case à Chocs" class="h-9 w-auto" />
+          <div class="min-w-0">
+            <div class="app-brand-title">Ticketing Dashboard</div>
+            <div class="text-[11px] text-zinc-400 truncate">Case à Chocs — ventes & billetterie</div>
+          </div>
+        </div>
+
+        <div class="flex-1" />
+
+        <nav class="app-links" aria-label="Navigation principale">
+          <router-link to="/" class="app-link" active-class="app-link-active">Accueil</router-link>
+          <router-link to="/overview" class="app-link" active-class="app-link-active">Overview</router-link>
+          <router-link to="/dashboard" class="app-link" active-class="app-link-active">Dashboard</router-link>
+          <router-link to="/tickets" class="app-link" active-class="app-link-active">Tickets</router-link>
+        </nav>
       </div>
-    </nav>
+    </header>
+
     <router-view />
   </div>
 </template>
@@ -42,5 +28,4 @@
 <script setup></script>
 
 <style scoped>
-/* Styles pour la navigation */
 </style>
