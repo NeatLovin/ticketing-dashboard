@@ -119,8 +119,28 @@ function buildTicketDoc(payload) {
   const sessions = Array.isArray(ticket.sessions) ? ticket.sessions : [];
   const mainSession = sessions.length > 0 ? sessions[0] : null;
 
-  const price = ticket.price || {};
-  const amountNumber = price.amount ? parseFloat(price.amount) : null;
+  // Gestion robuste du prix (objet ou string)
+  let priceObj = ticket.price;
+  let amountNumber = null;
+  let priceCurrency = null;
+  let priceAmountRaw = null;
+
+  if (typeof priceObj === 'object' && priceObj !== null) {
+    // Format standard: { amount: "25.00", currency: "CHF" }
+    if (priceObj.amount) {
+      amountNumber = parseFloat(priceObj.amount);
+      priceAmountRaw = priceObj.amount;
+    }
+    priceCurrency = priceObj.currency || null;
+  } else if (typeof priceObj === 'string') {
+    // Format legacy/simple: "25.00"
+    const match = priceObj.match(/([\d\.]+)/);
+    if (match) {
+      amountNumber = parseFloat(match[1]);
+      priceAmountRaw = priceObj;
+    }
+    priceCurrency = "CHF"; // Devise par défaut si string
+  }
 
   // On utilise le numéro de ticket comme identifiant métier principal
   const ticketNumber = ticket.number;
@@ -151,8 +171,8 @@ function buildTicketDoc(payload) {
 
     // Prix
     priceAmount: amountNumber,
-    priceAmountRaw: price.amount ?? null, // string d’origine "24.00"
-    priceCurrency: price.currency ?? null,
+    priceAmountRaw: priceAmountRaw,
+    priceCurrency: priceCurrency,
 
     // Acheteur
     buyerRole: buyer.role ?? null,

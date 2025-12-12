@@ -93,7 +93,11 @@ if __name__ == "__main__":
 
         for _ in range(num_tickets):
             category = random.choice(["Prélocation", "Sur place"])
-            price = "25.00" if category == "Prélocation" else "30.00"
+            price_amount = "25.00" if category == "Prélocation" else "30.00"
+            price = {
+                "amount": price_amount,
+                "currency": "CHF"
+            }
 
             # Calculate random generatedAt between 6 months and 1 hour before event
             event_datetime = datetime.datetime.strptime(f"{event['date']} 21:00:00", "%Y-%m-%d %H:%M:%S")
