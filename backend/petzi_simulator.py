@@ -134,10 +134,7 @@ if __name__ == "__main__":
                             }
                         ],
                         "promoter": "Case à Chocs",
-                        "price": {
-                            "amount": price,
-                            "currency": "CHF"
-                        }
+                        "price": price
                     },
                     "buyer": {
                         "role": "customer",
