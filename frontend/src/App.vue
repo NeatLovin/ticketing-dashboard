@@ -1,7 +1,10 @@
 <template>
   <div>
     <nav class="bg-blue-600 text-white p-4 shadow-md">
-      <div class="max-w-7xl mx-auto flex gap-4">
+      <div class="max-w-7xl mx-auto flex items-center gap-4">
+        <!-- Logo -->
+        <img src="/cac-logo-white.svg" alt="Logo" class="h-10 w-auto mr-2" />
+        
         <router-link 
           to="/" 
           class="px-4 py-2 rounded hover:bg-blue-700 transition"
