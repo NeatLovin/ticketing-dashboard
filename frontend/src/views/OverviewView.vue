@@ -69,6 +69,72 @@
               </div>
             </div>
           </div>
+
+          <!-- Peak Sales Time -->
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-pink-500">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 uppercase font-semibold">Pic de ventes</p>
+                <p class="text-2xl font-bold text-gray-800">{{ peakSalesTime }}</p>
+              </div>
+              <div class="p-3 bg-pink-100 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Avg Lead Time -->
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-teal-500">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 uppercase font-semibold">Délai moyen d'achat</p>
+                <p class="text-2xl font-bold text-gray-800">{{ avgLeadTime }} jours</p>
+              </div>
+              <div class="p-3 bg-teal-100 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Presale Percentage -->
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-indigo-500">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500 uppercase font-semibold">Prélocations</p>
+                <p class="text-2xl font-bold text-gray-800">{{ presalePercentage }}%</p>
+              </div>
+              <div class="p-3 bg-indigo-100 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Locations -->
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-sm text-gray-500 uppercase font-semibold">Top Localités</p>
+              <div class="p-2 bg-yellow-100 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
+            <ul class="space-y-1">
+              <li v-for="loc in topLocations" :key="loc.zip" class="flex justify-between text-sm">
+                <span class="text-gray-600 font-medium">{{ loc.zip }}</span>
+                <span class="text-gray-800 font-bold">{{ loc.count }}</span>
+              </li>
+              <li v-if="topLocations.length === 0" class="text-sm text-gray-500">N/A</li>
+            </ul>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -203,6 +269,99 @@ const totalEvents = computed(() => {
 const averageTicketPrice = computed(() => {
   if (totalTickets.value === 0) return 0;
   return totalRevenue.value / totalTickets.value;
+});
+
+const peakSalesTime = computed(() => {
+  if (tickets.value.length === 0) return 'N/A';
+
+  const slots = {};
+
+  tickets.value.forEach(t => {
+    const timestamp = t.createdAt;
+    if (!timestamp) return;
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    
+    // Day of week (0-6, 0=Sunday)
+    const day = date.getDay(); 
+    // Hour (0-23)
+    const hour = date.getHours();
+    
+    const key = `${day}-${hour}`;
+    slots[key] = (slots[key] || 0) + 1;
+  });
+
+  let maxKey = null;
+  let maxCount = 0;
+
+  for (const [key, count] of Object.entries(slots)) {
+    if (count > maxCount) {
+      maxCount = count;
+      maxKey = key;
+    }
+  }
+
+  if (!maxKey) return 'N/A';
+
+  const [dayStr, hourStr] = maxKey.split('-');
+  const dayIndex = parseInt(dayStr);
+  const hour = parseInt(hourStr);
+
+  const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  
+  return `${days[dayIndex]} ${hour}h`;
+});
+
+const avgLeadTime = computed(() => {
+  if (tickets.value.length === 0) return 0;
+  
+  let totalDays = 0;
+  let count = 0;
+  
+  tickets.value.forEach(t => {
+    if (t.generatedAt && t.sessionDate) {
+      const purchaseDate = new Date(t.generatedAt);
+      const eventDate = new Date(t.sessionDate);
+      
+      // Difference in milliseconds
+      const diffTime = eventDate - purchaseDate;
+      // Difference in days
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      
+      if (!isNaN(diffDays)) {
+        totalDays += diffDays;
+        count++;
+      }
+    }
+  });
+  
+  return count > 0 ? Math.round(totalDays / count) : 0;
+});
+
+const presalePercentage = computed(() => {
+  if (tickets.value.length === 0) return 0;
+  
+  // Check both ticketCategory (backend) and category (potential frontend legacy)
+  const presaleCount = tickets.value.filter(t => {
+    const cat = t.ticketCategory || t.category;
+    return cat === 'Prélocation';
+  }).length;
+  
+  return Math.round((presaleCount / tickets.value.length) * 100);
+});
+
+const topLocations = computed(() => {
+  const counts = {};
+  tickets.value.forEach(t => {
+    const zip = t.buyerPostcode;
+    if (zip) {
+      counts[zip] = (counts[zip] || 0) + 1;
+    }
+  });
+  
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([zip, count]) => ({ zip, count }));
 });
 
 // Top Events
