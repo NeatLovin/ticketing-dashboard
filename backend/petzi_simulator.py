@@ -88,12 +88,18 @@ if __name__ == "__main__":
 
     for event in events:
         event_id = random.randint(10000, 99999)
-        num_tickets = random.randint(20, 40)
+        num_tickets = random.randint(10, 50)
         print(f"Generating {num_tickets} tickets for event: {event['title']}")
 
         for _ in range(num_tickets):
+            prelocation_price = random.randint(10, 35)
+            on_place_price = random.randint(20, 50)
+            
+            if on_place_price < prelocation_price:
+                on_place_price = prelocation_price
+
             category = random.choice(["Prélocation", "Sur place"])
-            price_amount = "25.00" if category == "Prélocation" else "30.00"
+            price_amount = f"{prelocation_price:.2f}" if category == "Prélocation" else f"{on_place_price:.2f}"
             price = {
                 "amount": price_amount,
                 "currency": "CHF"
