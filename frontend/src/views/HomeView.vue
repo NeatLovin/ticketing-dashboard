@@ -5,7 +5,17 @@
       Bienvenue sur le dashboard de billetterie de la Case à Chocs.
     </p>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <router-link 
+        to="/overview" 
+        class="bg-indigo-600 text-white p-6 rounded-lg shadow-md hover:bg-indigo-700 transition"
+      >
+        <h2 class="text-xl font-bold mb-2">🔍 Vue d'ensemble</h2>
+        <p class="text-sm">
+          Indicateurs clés de performance (KPI), événements populaires et ventes récentes.
+        </p>
+      </router-link>
+
       <router-link 
         to="/dashboard" 
         class="bg-blue-500 text-white p-6 rounded-lg shadow-md hover:bg-blue-600 transition"
