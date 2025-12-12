@@ -10,6 +10,13 @@
           Accueil
         </router-link>
         <router-link 
+          to="/overview" 
+          class="px-4 py-2 rounded hover:bg-blue-700 transition"
+          active-class="bg-blue-800"
+        >
+          Vue d'ensemble
+        </router-link>
+        <router-link 
           to="/dashboard" 
           class="px-4 py-2 rounded hover:bg-blue-700 transition"
           active-class="bg-blue-800"
