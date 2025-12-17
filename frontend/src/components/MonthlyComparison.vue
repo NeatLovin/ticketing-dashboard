@@ -92,11 +92,15 @@ const props = defineProps({
 
 const selectedYear = ref(new Date().getFullYear());
 
+const getTicketDate = (ticket) => {
+  return TicketsService.toDate(ticket.generatedAt || ticket.createdAt);
+};
+
 // Calculer les années disponibles
 const availableYears = computed(() => {
   const years = new Set();
   props.tickets.forEach((ticket) => {
-    const date = TicketsService.toDate(ticket.createdAt);
+    const date = getTicketDate(ticket);
     if (date) {
       years.add(date.getFullYear());
     }
@@ -118,14 +122,14 @@ const previousYear = computed(() => selectedYear.value - 1);
 // Filtrer les tickets par année
 const currentYearTickets = computed(() => {
   return props.tickets.filter((ticket) => {
-    const date = TicketsService.toDate(ticket.createdAt);
+    const date = getTicketDate(ticket);
     return date && date.getFullYear() === selectedYear.value;
   });
 });
 
 const previousYearTickets = computed(() => {
   return props.tickets.filter((ticket) => {
-    const date = TicketsService.toDate(ticket.createdAt);
+    const date = getTicketDate(ticket);
     return date && date.getFullYear() === previousYear.value;
   });
 });
@@ -155,7 +159,7 @@ function groupByMonth(ticketsList) {
   }));
 
   ticketsList.forEach((ticket) => {
-    const date = TicketsService.toDate(ticket.createdAt);
+    const date = getTicketDate(ticket);
     if (date) {
       const monthIndex = date.getMonth();
       months[monthIndex].count++;
