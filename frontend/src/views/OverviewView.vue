@@ -155,7 +155,7 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                  <tr v-for="event in topEvents" :key="event.name" class="hover:bg-gray-50 transition">
+                  <tr v-for="event in topEvents" :key="event.name" class="hover:bg-gray-50 transition h-20">
                     <td class="px-6 py-4 font-medium text-zinc-900 truncate max-w-xs" :title="event.name">
                       {{ event.name }}
                     </td>
@@ -188,7 +188,7 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                  <tr v-for="ticket in recentTickets" :key="ticket.id" class="hover:bg-gray-50 transition">
+                  <tr v-for="ticket in recentTickets" :key="ticket.id" class="hover:bg-gray-50 transition h-20">
                     <td class="px-6 py-4">
                       <div class="font-medium text-gray-900">
                         {{ ticket.buyerFirstName }} {{ ticket.buyerLastName }}
@@ -386,6 +386,6 @@ const topEvents = computed(() => {
 // Recent Sales
 const recentTickets = computed(() => {
   // Assuming tickets are already sorted by createdAt desc from the service
-  return tickets.value.slice(0, 10);
+  return tickets.value.slice(0, 5);
 });
 </script>

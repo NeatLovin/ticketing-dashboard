@@ -180,7 +180,7 @@ if __name__ == "__main__":
     ]
 
     first_names = ["Jean", "Marie", "Pierre", "Sophie", "Lucas", "Emma", "Thomas", "Lea", "Nicolas", "Julie", "David", "Sarah", "Paul", "Anna", "Julien", "Laura", "Kevin", "Celine", "Maxime", "Audrey", "Valentin"]
-    last_names = ["Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petit", "Durand", "Leroy", "Moreau", "Simon", "Laurent", "Lefebvre", "Michel", "Garcia", "David", "Bertrand", "Roux", "Vincent", "Fournier"]
+    last_names = ["Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petite", "Durand", "Legolasse", "Moreau", "Simons", "Laurent", "Lefebvre", "Michelier", "Garcia", "Davide", "Bertrand", "Rousseau", "Vincent", "Fournier"]
 
     for event in events:
         event_id = random.randint(10000, 99999)
