@@ -45,58 +45,60 @@
         </div>
       </div>
 
-      <div v-else class="space-y-6">
-        <!-- Courbes de vente en temps réel -->
-        <div class="space-y-3">
-          <div class="panel p-4">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-4">
-              <label class="inline-flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" v-model="showCumulative" class="rounded text-blue-600 focus:ring-blue-500" />
-                <span class="text-sm text-zinc-700">Ventes cumulées</span>
-              </label>
-              <label class="inline-flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" v-model="showHourly" class="rounded text-blue-600 focus:ring-blue-500" />
-                <span class="text-sm text-zinc-700">Ventes par période</span>
-              </label>
+        <div v-else>
+          <div v-if="hasSelectedEvents" class="space-y-6">
+            <!-- Courbes de vente en temps réel -->
+            <div class="space-y-3">
+              <div class="panel p-4">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" v-model="showCumulative" class="rounded text-blue-600 focus:ring-blue-500" />
+                    <span class="text-sm text-zinc-700">Ventes cumulées</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" v-model="showHourly" class="rounded text-blue-600 focus:ring-blue-500" />
+                    <span class="text-sm text-zinc-700">Ventes par période</span>
+                  </label>
+                </div>
+              
+                <div class="flex items-center bg-zinc-100 p-1 rounded-lg">
+                  <button 
+                    @click="viewMode = 'daily'"
+                    :class="['px-3 py-1.5 rounded-md text-sm transition-all', viewMode === 'daily' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700']"
+                  >
+                    Journalier
+                  </button>
+                  <button 
+                    @click="viewMode = 'weekly'"
+                    :class="['px-3 py-1.5 rounded-md text-sm transition-all', viewMode === 'weekly' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700']"
+                  >
+                    Hebdomadaire
+                  </button>
+                </div>
+              </div>
+              </div>
+              <SalesChart 
+                :tickets="filteredTickets" 
+                :show-cumulative="showCumulative" 
+                :show-hourly="showHourly" 
+                :view-mode="viewMode"
+              />
             </div>
-            
-            <div class="flex items-center bg-zinc-100 p-1 rounded-lg">
-              <button 
-                @click="viewMode = 'daily'"
-                :class="['px-3 py-1.5 rounded-md text-sm transition-all', viewMode === 'daily' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700']"
-              >
-                Journalier
-              </button>
-              <button 
-                @click="viewMode = 'weekly'"
-                :class="['px-3 py-1.5 rounded-md text-sm transition-all', viewMode === 'weekly' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700']"
-              >
-                Hebdomadaire
-              </button>
-            </div>
-          </div>
-          </div>
-          <SalesChart 
-            :tickets="filteredTickets" 
-            :show-cumulative="showCumulative" 
-            :show-hourly="showHourly" 
-            :view-mode="viewMode"
-          />
-        </div>
 
-        <!-- Répartition des ventes -->
-        <TicketsDistributionChart :tickets="filteredTickets" />
-        
-        <!-- Localisation géographique -->
-        <GeographicMap :tickets="filteredTickets" />
-        
-        <!-- Panier moyen -->
-        <AverageBasket :tickets="filteredTickets" />
-        
-        <!-- Comparaison mensuelle -->
-        <MonthlyComparison :tickets="filteredTickets" />
-      </div>
+            <!-- Répartition des ventes -->
+            <TicketsDistributionChart :tickets="filteredTickets" />
+          
+            <!-- Localisation géographique -->
+            <GeographicMap :tickets="filteredTickets" />
+          
+            <!-- Panier moyen -->
+            <AverageBasket :tickets="filteredTickets" />
+          
+            <!-- Comparaison mensuelle -->
+            <MonthlyComparison :tickets="filteredTickets" />
+          </div>
+        </div>
   </main>
 </template>
 
@@ -168,6 +170,8 @@ const filteredTickets = computed(() => {
 function handleFiltersUpdate(newFilters) {
   filters.value = newFilters;
 }
+
+const hasSelectedEvents = computed(() => filters.value.selectedEvents.length > 0);
 
 let unsubscribe = null;
 
