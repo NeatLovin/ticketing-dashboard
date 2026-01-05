@@ -68,7 +68,7 @@ if __name__ == "__main__":
                  "sessions":[
                     {
                        "name":"Test To Delete",
-                       "date":"2024-01-27",
+                       "date":"2026-01-27",
                        "time":"21:00:00",
                        "doors":"21:00:00",
                        "location":{
@@ -96,6 +96,7 @@ if __name__ == "__main__":
     '''
     data_dict = json.loads(data)
     data_dict["details"]["ticket"]["number"] = generate_random_string()
+    data_dict["details"]["ticket"]["generatedAt"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     data = json.dumps(data_dict, indent=4)
     # Make the POST request
     make_post_request(args.url, data, args.secret)
