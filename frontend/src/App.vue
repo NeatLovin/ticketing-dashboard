@@ -111,7 +111,16 @@
       </transition>
     </div>
 
-    <router-view />
+    <main class="flex-1">
+      <router-view />
+    </main>
+
+    <footer class="border-t border-white/10">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-zinc-300">
+        <div>© 2026 Haute Ecole Arc - HES-SO</div>
+        <div>Design et développement — NEATLOVIN et GARD11</div>
+      </div>
+    </footer>
   </div>
 </template>
 

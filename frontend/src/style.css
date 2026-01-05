@@ -14,7 +14,7 @@
 
 @layer components {
 	.app-shell {
-		@apply min-h-screen;
+		@apply min-h-screen flex flex-col;
 	}
 
 	.app-nav {
