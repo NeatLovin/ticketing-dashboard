@@ -1,8 +1,7 @@
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { db } from "../firebase";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import SkeletonBlock from "../components/SkeletonBlock.vue";
+import { TicketsService } from "../services/ticketsService";
 
 const FILTER_PRESETS_STORAGE_KEY = "ticketing-dashboard:ticketsView:filterPresets:v1";
 
@@ -95,6 +94,8 @@ const tickets = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const slowLoad = ref(false);
+
+const hasInitializedRealtime = ref(false);
 
 // Tri
 const sortColumn = ref('date'); // Tri par défaut sur la date
@@ -527,8 +528,10 @@ function exportFilteredTicketsCsv() {
   URL.revokeObjectURL(url);
 }
 
-onMounted(async () => {
-  // Charger les presets dès le départ
+let unsubscribeTickets = null;
+let slowLoadTimeoutId = null;
+
+onMounted(() => {
   try {
     refreshPresets();
   } catch {
@@ -537,99 +540,47 @@ onMounted(async () => {
 
   loading.value = true;
   error.value = null;
+  slowLoad.value = false;
 
-  // Indicateur "lent" ultra court sans interrompre la requête (1s)
   const TIMEOUT_MS = 1000;
   const TIMEOUT_SECONDS = Math.ceil(TIMEOUT_MS / 1000);
-  const timeoutId = setTimeout(() => {
+  slowLoadTimeoutId = setTimeout(() => {
     if (loading.value) {
       console.warn(`⏱️ Chargement plus long que prévu (> ${TIMEOUT_SECONDS}s), on continue d'attendre…`);
-      slowLoad.value = true; // on n'arrête PAS la requête et on n'affiche PAS d'erreur
+      slowLoad.value = true;
     }
   }, TIMEOUT_MS);
 
-  try {
-    if (!db) {
-      throw new Error("Firestore (db) non initialisé — vérifie frontend/src/firebase.js et .env.local");
+  unsubscribeTickets = TicketsService.subscribeToAllTickets((incoming, err) => {
+    if (err) {
+      console.error("❌ Erreur temps réel (tickets):", err);
+
+      let errorMessage = err?.message || String(err);
+      if (err?.code === "unavailable" || err?.code === "deadline-exceeded") {
+        errorMessage = "Impossible de se connecter à Firestore. Vérifiez votre connexion internet et que Firebase est accessible.";
+        if (import.meta.env.DEV) {
+          errorMessage += " Si vous utilisez l'émulateur, assurez-vous qu'il est démarré et ajoutez VITE_USE_FIREBASE_EMULATOR=true dans .env.local";
+        }
+      } else if (err?.code === "permission-denied") {
+        errorMessage = "Permission refusée. Vérifiez les règles de sécurité Firestore.";
+      }
+
+      error.value = errorMessage;
+      loading.value = false;
+      slowLoad.value = false;
+      if (slowLoadTimeoutId) clearTimeout(slowLoadTimeoutId);
+      slowLoadTimeoutId = null;
+      return;
     }
 
-    console.log("🔍 Début de la récupération des tickets depuis Firestore...");
-    console.log("📊 Collection: 'tickets'");
-    console.log(`⏱️ Indicateur lenteur après: ${TIMEOUT_SECONDS} seconde(s)`);
-    console.log("🔗 Configuration Firebase:", {
-      projectId: db.app.options.projectId,
-      databaseId: db._delegate?.databaseId || "default",
-    });
-    
-    const startTime = Date.now();
-    
-    // Essayer d'abord une requête simple sans orderBy pour éviter les problèmes d'index
-    let q;
-    let snap;
-    let docs;
-    
-    try {
-      console.log("📝 Tentative 1: Requête simple sans orderBy...");
-      q = query(collection(db, "tickets"));
-      snap = await getDocs(q);
-      docs = snap.docs;
-      const elapsed = Date.now() - startTime;
-      console.log(`✅ Requête réussie en ${elapsed}ms. ${docs.length} document(s) trouvé(s)`);
-      
-      // Si on a des résultats, essayer de les trier par createdAt si disponible
-      if (docs.length > 0) {
-        console.log("🔄 Tri manuel des résultats par createdAt...");
-        docs = docs.sort((a, b) => {
-          const dateA = a.data().createdAt;
-          const dateB = b.data().createdAt;
-          if (!dateA || !dateB) return 0;
-          try {
-            const timeA = dateA.toDate ? dateA.toDate().getTime() : new Date(dateA).getTime();
-            const timeB = dateB.toDate ? dateB.toDate().getTime() : new Date(dateB).getTime();
-            return timeB - timeA; // Plus récent en premier
-          } catch {
-            return 0;
-          }
-        });
-        console.log("✅ Tri terminé");
-      }
-    } catch (simpleError) {
-      const elapsed = Date.now() - startTime;
-      console.error(`❌ Erreur avec requête simple après ${elapsed}ms:`, simpleError);
-      console.error("Détails:", {
-        code: simpleError?.code,
-        message: simpleError?.message,
-      });
-      
-      // Si la requête simple échoue, essayer avec orderBy (peut-être qu'un index existe)
-      try {
-        console.log("📝 Tentative 2: Requête avec orderBy('createdAt', 'desc')...");
-        q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
-        snap = await getDocs(q);
-        docs = snap.docs;
-        const elapsed2 = Date.now() - startTime;
-        console.log(`✅ Requête avec orderBy réussie en ${elapsed2}ms. ${docs.length} document(s) trouvé(s)`);
-      } catch (orderByError) {
-        const elapsed2 = Date.now() - startTime;
-        console.error(`❌ Erreur avec orderBy après ${elapsed2}ms:`, orderByError);
-        throw orderByError; // Relancer l'erreur pour qu'elle soit gérée par le catch principal
-      }
-    }
-
-    // transformer en objets JS simples
-    tickets.value = docs.map((doc) => {
-      const data = doc.data();
-
-      // createdAt peut être un Timestamp Firestore, une ISO string, ou autre.
+    tickets.value = (incoming || []).map((data) => {
       let createdAtRaw = data.createdAt;
       let generatedAtRaw = data.generatedAt;
 
       try {
-        // si c'est un objet avec toDate (Firestore Timestamp), convertir en ISO string pour affichage brut lisible
         if (createdAtRaw && typeof createdAtRaw.toDate === "function") {
           createdAtRaw = createdAtRaw.toDate().toISOString();
         } else if (typeof createdAtRaw === "object" && createdAtRaw !== null) {
-          // si c'est un objet quelconque, stringify minimal
           createdAtRaw = JSON.stringify(createdAtRaw);
         }
 
@@ -638,12 +589,12 @@ onMounted(async () => {
         } else if (typeof generatedAtRaw === "object" && generatedAtRaw !== null) {
           generatedAtRaw = JSON.stringify(generatedAtRaw);
         }
-      } catch (e) {
-        // leave as-is si erreur
+      } catch {
+        // leave as-is
       }
 
       return {
-        id: doc.id,
+        id: data.id,
         eventName: data.eventName ?? null,
         sessionDate: data.sessionDate ?? null,
         sessionTime: data.sessionTime ?? null,
@@ -653,7 +604,6 @@ onMounted(async () => {
         priceCurrency: data.priceCurrency ?? null,
         createdAtRaw,
         generatedAtRaw,
-        // New fields
         ticketType: data.ticketType ?? null,
         ticketCategory: data.ticketCategory ?? null,
         buyerFirstName: data.buyerFirstName ?? null,
@@ -667,65 +617,41 @@ onMounted(async () => {
       };
     });
 
-    console.debug(`Tickets chargés: ${tickets.value.length}`);
-    
-    // Initialiser le filtre catégorie avec toutes les catégories cochées par défaut
-    const cats = new Set(tickets.value.map(t => t.ticketCategory).filter(Boolean));
-    filters.value.ticketCategory = Array.from(cats).sort();
-
-    // Initialiser le filtre prix avec min/max
-    const prices = tickets.value.map(t => t.priceAmount).filter(p => typeof p === 'number');
-    if (prices.length > 0) {
-      filters.value.priceMin = Math.min(...prices);
-      filters.value.priceMax = Math.max(...prices);
-    }
-
-    // Appliquer un preset demandé pendant le chargement
-    if (pendingPresetId.value) {
-      const preset = savedFilterPresets.value.find(p => p.id === pendingPresetId.value);
-      pendingPresetId.value = null;
-      if (preset) {
-        applyPreset(preset);
-      }
-    }
-
-    if (tickets.value.length === 0) {
-      console.warn("⚠️ Aucun ticket trouvé dans la collection 'tickets'");
-      console.info("💡 Pour ajouter des tickets, utilisez le simulateur Petzi ou envoyez des webhooks");
-      console.info("🔍 Vérifications à faire:");
-      console.info("   1. Vérifiez que vous êtes connecté au bon projet Firebase (émulateur vs cloud)");
-      console.info("   2. Ouvrez la console Firebase/émulateur et vérifiez que la collection 'tickets' contient des documents");
-      console.info("   3. Si vous utilisez l'émulateur, ajoutez VITE_USE_FIREBASE_EMULATOR=true dans .env.local");
-      console.info("   4. Vérifiez les règles de sécurité Firestore dans backend/firestore.rules");
-    } else {
-      console.log(`✅ ${tickets.value.length} ticket(s) chargé(s) avec succès!`);
-    }
-  } catch (err) {
-    console.error("❌ Erreur lecture tickets:", err);
-    console.error("Détails de l'erreur:", {
-      code: err?.code,
-      message: err?.message,
-      stack: err?.stack,
-    });
-    
-    // Messages d'erreur plus explicites
-    let errorMessage = err?.message || String(err);
-    if (err?.code === "unavailable" || err?.code === "deadline-exceeded") {
-      errorMessage = "Impossible de se connecter à Firestore. Vérifiez votre connexion internet et que Firebase est accessible.";
-      if (import.meta.env.DEV) {
-        errorMessage += " Si vous utilisez l'émulateur, assurez-vous qu'il est démarré et ajoutez VITE_USE_FIREBASE_EMULATOR=true dans .env.local";
-      }
-    } else if (err?.code === "permission-denied") {
-      errorMessage = "Permission refusée. Vérifiez les règles de sécurité Firestore.";
-    } else if (err?.code === "failed-precondition") {
-      errorMessage = "Index manquant. Créez l'index requis dans la console Firebase ou utilisez l'émulateur.";
-    }
-    
-    error.value = errorMessage;
-  } finally {
-    clearTimeout(timeoutId);
     loading.value = false;
-  }
+    slowLoad.value = false;
+    error.value = null;
+
+    if (slowLoadTimeoutId) clearTimeout(slowLoadTimeoutId);
+    slowLoadTimeoutId = null;
+
+    if (!hasInitializedRealtime.value) {
+      hasInitializedRealtime.value = true;
+
+      if (filters.value.ticketCategory.length === 0) {
+        const cats = new Set(tickets.value.map(t => t.ticketCategory).filter(Boolean));
+        filters.value.ticketCategory = Array.from(cats).sort();
+      }
+
+      const prices = tickets.value.map(t => t.priceAmount).filter(p => typeof p === 'number');
+      if (prices.length > 0 && filters.value.priceMin === null && filters.value.priceMax === null) {
+        filters.value.priceMin = Math.min(...prices);
+        filters.value.priceMax = Math.max(...prices);
+      }
+
+      if (pendingPresetId.value) {
+        const preset = savedFilterPresets.value.find(p => p.id === pendingPresetId.value);
+        pendingPresetId.value = null;
+        if (preset) applyPreset(preset);
+      }
+    }
+  });
+});
+
+onUnmounted(() => {
+  if (slowLoadTimeoutId) clearTimeout(slowLoadTimeoutId);
+  slowLoadTimeoutId = null;
+  if (unsubscribeTickets) unsubscribeTickets();
+  unsubscribeTickets = null;
 });
 </script>
 
