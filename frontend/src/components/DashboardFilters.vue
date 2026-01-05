@@ -133,6 +133,10 @@ const props = defineProps({
   categories: {
     type: Array,
     default: () => []
+  },
+  initialFilters: {
+    type: Object,
+    default: () => ({})
   }
 });
 
@@ -148,6 +152,30 @@ const eventsDropdownRef = ref(null);
 const categoriesDropdownRef = ref(null);
 const hasInitializedCategories = ref(false);
 
+function asStringArray(value) {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string') return value ? [value] : [];
+  return [];
+}
+
+// Apply initial filters from parent (e.g. URL restore)
+watch(
+  () => props.initialFilters,
+  (next) => {
+    if (!next || typeof next !== 'object') return;
+
+    if (Object.prototype.hasOwnProperty.call(next, 'selectedEvents')) {
+      selectedEvents.value = asStringArray(next.selectedEvents);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(next, 'selectedCategories')) {
+      selectedCategories.value = asStringArray(next.selectedCategories);
+      hasInitializedCategories.value = true;
+    }
+  },
+  { immediate: true, deep: true }
+);
+
 const filteredEvents = computed(() => {
   if (!searchQuery.value) return props.events;
   const query = searchQuery.value.toLowerCase();
@@ -161,6 +189,10 @@ watch(() => props.categories, (newVal) => {
   if (newVal.length > 0 && !hasInitializedCategories.value) {
     selectedCategories.value = [...newVal];
     hasInitializedCategories.value = true;
+  } else if (newVal.length > 0 && hasInitializedCategories.value) {
+    // Keep selection in sync with available categories
+    const allowed = new Set(newVal);
+    selectedCategories.value = selectedCategories.value.filter(c => allowed.has(c));
   }
 }, { immediate: true });
 

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import SkeletonBlock from "../components/SkeletonBlock.vue";
 import { TicketsService } from "../services/ticketsService";
 
@@ -97,12 +98,150 @@ const slowLoad = ref(false);
 
 const hasInitializedRealtime = ref(false);
 
+const route = useRoute();
+const router = useRouter();
+
+const TICKETS_QUERY_KEYS = {
+  dateStart: "dateStart",
+  dateEnd: "dateEnd",
+  ticketNumber: "ticketNumber",
+  eventName: "eventName",
+  buyer: "buyer",
+  ticketCategory: "ticketCategory",
+  priceMin: "priceMin",
+  priceMax: "priceMax",
+};
+
+function asString(value) {
+  if (value === undefined || value === null) return "";
+  if (Array.isArray(value)) return value.length ? String(value[0] ?? "") : "";
+  return String(value);
+}
+
+function asStringArray(value) {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === "string") return value ? [value] : [];
+  return [];
+}
+
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+function filtersFromQuery(query) {
+  const draft = {};
+
+  if (hasOwn(query, TICKETS_QUERY_KEYS.dateStart)) draft.dateStart = asString(query[TICKETS_QUERY_KEYS.dateStart]);
+  if (hasOwn(query, TICKETS_QUERY_KEYS.dateEnd)) draft.dateEnd = asString(query[TICKETS_QUERY_KEYS.dateEnd]);
+  if (hasOwn(query, TICKETS_QUERY_KEYS.ticketNumber)) draft.ticketNumber = asString(query[TICKETS_QUERY_KEYS.ticketNumber]);
+  if (hasOwn(query, TICKETS_QUERY_KEYS.eventName)) draft.eventName = asString(query[TICKETS_QUERY_KEYS.eventName]);
+  if (hasOwn(query, TICKETS_QUERY_KEYS.buyer)) draft.buyer = asString(query[TICKETS_QUERY_KEYS.buyer]);
+
+  if (hasOwn(query, TICKETS_QUERY_KEYS.ticketCategory)) {
+    draft.ticketCategory = asStringArray(query[TICKETS_QUERY_KEYS.ticketCategory]);
+  }
+
+  if (hasOwn(query, TICKETS_QUERY_KEYS.priceMin)) {
+    const raw = asString(query[TICKETS_QUERY_KEYS.priceMin]);
+    draft.priceMin = raw === "" ? null : Number(raw);
+  }
+  if (hasOwn(query, TICKETS_QUERY_KEYS.priceMax)) {
+    const raw = asString(query[TICKETS_QUERY_KEYS.priceMax]);
+    draft.priceMax = raw === "" ? null : Number(raw);
+  }
+
+  return normalizeFilters(draft);
+}
+
+function buildTicketsQueryFromFilters(currentFilters) {
+  const nextQuery = { ...route.query };
+
+  const setOrDelete = (key, value) => {
+    if (value === undefined || value === null || value === "") {
+      delete nextQuery[key];
+    } else {
+      nextQuery[key] = value;
+    }
+  };
+
+  setOrDelete(TICKETS_QUERY_KEYS.dateStart, (currentFilters.dateStart || "").trim());
+  setOrDelete(TICKETS_QUERY_KEYS.dateEnd, (currentFilters.dateEnd || "").trim());
+  setOrDelete(TICKETS_QUERY_KEYS.ticketNumber, (currentFilters.ticketNumber || "").trim());
+  setOrDelete(TICKETS_QUERY_KEYS.eventName, (currentFilters.eventName || "").trim());
+  setOrDelete(TICKETS_QUERY_KEYS.buyer, (currentFilters.buyer || "").trim());
+
+  const categories = Array.isArray(currentFilters.ticketCategory)
+    ? currentFilters.ticketCategory.filter(Boolean)
+    : [];
+  const allCats = uniqueCategories.value;
+  const shouldPersistCategories =
+    categories.length > 0 &&
+    allCats.length > 0 &&
+    categories.length < allCats.length;
+
+  if (shouldPersistCategories) {
+    nextQuery[TICKETS_QUERY_KEYS.ticketCategory] = categories;
+  } else {
+    delete nextQuery[TICKETS_QUERY_KEYS.ticketCategory];
+  }
+
+  const range = priceRange.value;
+  const min = currentFilters.priceMin;
+  const max = currentFilters.priceMax;
+
+  // Omettre les bornes si elles correspondent au range complet
+  if (min === null || min === undefined || (Number.isFinite(min) && Number.isFinite(range?.min) && min === range.min)) {
+    delete nextQuery[TICKETS_QUERY_KEYS.priceMin];
+  } else {
+    nextQuery[TICKETS_QUERY_KEYS.priceMin] = String(min);
+  }
+
+  if (max === null || max === undefined || (Number.isFinite(max) && Number.isFinite(range?.max) && max === range.max)) {
+    delete nextQuery[TICKETS_QUERY_KEYS.priceMax];
+  } else {
+    nextQuery[TICKETS_QUERY_KEYS.priceMax] = String(max);
+  }
+
+  return nextQuery;
+}
+
+function queryValueEquals(a, b) {
+  const norm = (v) => {
+    if (v === undefined || v === null) return null;
+    if (Array.isArray(v)) return v.map(String);
+    return String(v);
+  };
+  return JSON.stringify(norm(a)) === JSON.stringify(norm(b));
+}
+
+function shouldReplaceQuery(nextQuery) {
+  const keys = Object.values(TICKETS_QUERY_KEYS);
+  return keys.some((k) => !queryValueEquals(route.query[k], nextQuery[k]));
+}
+
+const urlSyncEnabled = ref(false);
+const syncingFromRoute = ref(false);
+
 // Tri
 const sortColumn = ref('date'); // Tri par défaut sur la date
 const sortDirection = ref('desc'); // Le plus récent en premier
 
 // Filtres
 const filters = ref(getDefaultFilters());
+
+// Restore filters from URL + keep in sync with back/forward
+watch(
+  () => route.query,
+  (query) => {
+    syncingFromRoute.value = true;
+    filters.value = {
+      ...getDefaultFilters(),
+      ...filtersFromQuery(query),
+    };
+    syncingFromRoute.value = false;
+  },
+  { immediate: true }
+);
 
 // Presets de filtres (localStorage)
 const savedFilterPresets = ref([]);
@@ -241,6 +380,20 @@ function resetAllFilters() {
     }
   }
 }
+
+// Sync filters to URL (replace to avoid polluting history)
+watch(
+  () => filters.value,
+  (next) => {
+    if (!urlSyncEnabled.value) return;
+    if (syncingFromRoute.value) return;
+
+    const nextQuery = buildTicketsQueryFromFilters(next);
+    if (!shouldReplaceQuery(nextQuery)) return;
+    router.replace({ query: nextQuery });
+  },
+  { deep: true }
+);
 
 const showCategoryDropdown = ref(false);
 
@@ -627,15 +780,20 @@ onMounted(() => {
     if (!hasInitializedRealtime.value) {
       hasInitializedRealtime.value = true;
 
+      // Autoriser la synchro URL une fois qu'on a la data (évite d'écrire des defaults inutiles)
+      urlSyncEnabled.value = true;
+
       if (filters.value.ticketCategory.length === 0) {
         const cats = new Set(tickets.value.map(t => t.ticketCategory).filter(Boolean));
         filters.value.ticketCategory = Array.from(cats).sort();
       }
 
       const prices = tickets.value.map(t => t.priceAmount).filter(p => typeof p === 'number');
-      if (prices.length > 0 && filters.value.priceMin === null && filters.value.priceMax === null) {
-        filters.value.priceMin = Math.min(...prices);
-        filters.value.priceMax = Math.max(...prices);
+      if (prices.length > 0) {
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        if (filters.value.priceMin === null) filters.value.priceMin = min;
+        if (filters.value.priceMax === null) filters.value.priceMax = max;
       }
 
       if (pendingPresetId.value) {

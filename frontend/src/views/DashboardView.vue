@@ -8,6 +8,7 @@
       <DashboardFilters 
         :events="uniqueEvents" 
         :categories="uniqueCategories"
+        :initial-filters="componentInitialFilters"
         @update:filters="handleFiltersUpdate"
       />
 
@@ -103,7 +104,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import SalesChart from "../components/SalesChart.vue";
 import TicketsDistributionChart from "../components/TicketsDistributionChart.vue";
 import GeographicMap from "../components/GeographicMap.vue";
@@ -124,6 +126,83 @@ const filters = ref({
   selectedEvents: [],
   selectedCategories: []
 });
+
+const route = useRoute();
+const router = useRouter();
+
+const DASHBOARD_QUERY_KEYS = {
+  events: "events",
+  categories: "categories",
+};
+
+function asStringArray(value) {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === "string") return value ? [value] : [];
+  return [];
+}
+
+function pickRouteFilters(query) {
+  const hasEvents = Object.prototype.hasOwnProperty.call(query, DASHBOARD_QUERY_KEYS.events);
+  const hasCategories = Object.prototype.hasOwnProperty.call(query, DASHBOARD_QUERY_KEYS.categories);
+
+  return {
+    // For the view's filtering logic, absence === no filter.
+    selectedEvents: hasEvents ? asStringArray(query[DASHBOARD_QUERY_KEYS.events]) : [],
+    selectedCategories: hasCategories ? asStringArray(query[DASHBOARD_QUERY_KEYS.categories]) : [],
+    // For the UI component: absence === default behavior (all categories selected when available)
+    componentInitial: {
+      ...(hasEvents ? { selectedEvents: asStringArray(query[DASHBOARD_QUERY_KEYS.events]) } : {}),
+      ...(hasCategories ? { selectedCategories: asStringArray(query[DASHBOARD_QUERY_KEYS.categories]) } : {}),
+    },
+  };
+}
+
+function buildDashboardQueryFromFilters(currentFilters) {
+  const nextQuery = { ...route.query };
+
+  const events = Array.isArray(currentFilters.selectedEvents) ? currentFilters.selectedEvents.filter(Boolean) : [];
+  if (events.length > 0) {
+    nextQuery[DASHBOARD_QUERY_KEYS.events] = events;
+  } else {
+    delete nextQuery[DASHBOARD_QUERY_KEYS.events];
+  }
+
+  const categories = Array.isArray(currentFilters.selectedCategories) ? currentFilters.selectedCategories.filter(Boolean) : [];
+  const allCats = uniqueCategories.value;
+  const shouldPersistCategories =
+    categories.length > 0 &&
+    allCats.length > 0 &&
+    categories.length < allCats.length;
+
+  if (shouldPersistCategories) {
+    nextQuery[DASHBOARD_QUERY_KEYS.categories] = categories;
+  } else {
+    delete nextQuery[DASHBOARD_QUERY_KEYS.categories];
+  }
+
+  return nextQuery;
+}
+
+function queryValueEquals(a, b) {
+  const norm = (v) => {
+    if (v === undefined || v === null) return null;
+    if (Array.isArray(v)) return v.map(String);
+    return String(v);
+  };
+
+  const na = norm(a);
+  const nb = norm(b);
+  return JSON.stringify(na) === JSON.stringify(nb);
+}
+
+function shouldReplaceQuery(nextQuery) {
+  const keys = Object.values(DASHBOARD_QUERY_KEYS);
+  return keys.some((k) => !queryValueEquals(route.query[k], nextQuery[k]));
+}
+
+const componentInitialFilters = ref({});
+const urlSyncEnabled = ref(false);
+const syncingFromRoute = ref(false);
 
 const uniqueEvents = computed(() => {
   const eventsMap = new Map();
@@ -174,6 +253,46 @@ function handleFiltersUpdate(newFilters) {
 const hasSelectedEvents = computed(() => filters.value.selectedEvents.length > 0);
 
 let unsubscribe = null;
+
+// Restore filters from URL + keep in sync with back/forward
+watch(
+  () => route.query,
+  (query) => {
+    const picked = pickRouteFilters(query);
+    syncingFromRoute.value = true;
+    filters.value = {
+      selectedEvents: picked.selectedEvents,
+      selectedCategories: picked.selectedCategories,
+    };
+    componentInitialFilters.value = picked.componentInitial;
+    syncingFromRoute.value = false;
+  },
+  { immediate: true }
+);
+
+// Enable URL sync only once tickets are loaded (prevents initial default category selection from polluting URL)
+watch(
+  () => loading.value,
+  (isLoading, wasLoading) => {
+    if (wasLoading && !isLoading) {
+      urlSyncEnabled.value = true;
+    }
+  },
+  { immediate: false }
+);
+
+watch(
+  () => filters.value,
+  (next) => {
+    if (!urlSyncEnabled.value) return;
+    if (syncingFromRoute.value) return;
+
+    const nextQuery = buildDashboardQueryFromFilters(next);
+    if (!shouldReplaceQuery(nextQuery)) return;
+    router.replace({ query: nextQuery });
+  },
+  { deep: true }
+);
 
 onMounted(() => {
   unsubscribe = TicketsService.subscribeToAllTickets((tickets) => {
