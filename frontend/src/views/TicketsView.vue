@@ -4,6 +4,92 @@ import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
 import SkeletonBlock from "../components/SkeletonBlock.vue";
 
+const FILTER_PRESETS_STORAGE_KEY = "ticketing-dashboard:ticketsView:filterPresets:v1";
+
+function getDefaultFilters() {
+  return {
+    dateStart: "",
+    dateEnd: "",
+    ticketNumber: "",
+    eventName: "",
+    buyer: "",
+    ticketCategory: [],
+    priceMin: null,
+    priceMax: null,
+  };
+}
+
+function normalizeFilters(input) {
+  const base = getDefaultFilters();
+  const obj = (input && typeof input === "object") ? input : {};
+  const normalized = {
+    ...base,
+    ...obj,
+  };
+
+  normalized.dateStart = typeof normalized.dateStart === "string" ? normalized.dateStart : "";
+  normalized.dateEnd = typeof normalized.dateEnd === "string" ? normalized.dateEnd : "";
+  normalized.ticketNumber = typeof normalized.ticketNumber === "string" ? normalized.ticketNumber : "";
+  normalized.eventName = typeof normalized.eventName === "string" ? normalized.eventName : "";
+  normalized.buyer = typeof normalized.buyer === "string" ? normalized.buyer : "";
+
+  normalized.ticketCategory = Array.isArray(normalized.ticketCategory)
+    ? normalized.ticketCategory.filter(Boolean)
+    : [];
+
+  normalized.priceMin = normalized.priceMin === null || normalized.priceMin === ""
+    ? null
+    : Number(normalized.priceMin);
+  normalized.priceMax = normalized.priceMax === null || normalized.priceMax === ""
+    ? null
+    : Number(normalized.priceMax);
+
+  if (Number.isNaN(normalized.priceMin)) normalized.priceMin = null;
+  if (Number.isNaN(normalized.priceMax)) normalized.priceMax = null;
+
+  return normalized;
+}
+
+function safeJsonParse(str, fallback) {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return fallback;
+  }
+}
+
+function loadFilterPresets() {
+  const raw = localStorage.getItem(FILTER_PRESETS_STORAGE_KEY);
+  if (!raw) return [];
+  const parsed = safeJsonParse(raw, null);
+  if (!parsed) return [];
+
+  // Supporte deux formats: { presets: [...] } ou directement [...]
+  const presets = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.presets) ? parsed.presets : []);
+  return presets
+    .filter(p => p && typeof p === "object")
+    .map(p => ({
+      id: String(p.id ?? ""),
+      name: String(p.name ?? ""),
+      filters: normalizeFilters(p.filters),
+      createdAt: typeof p.createdAt === "number" ? p.createdAt : Date.now(),
+      updatedAt: typeof p.updatedAt === "number" ? p.updatedAt : (typeof p.createdAt === "number" ? p.createdAt : Date.now()),
+    }))
+    .filter(p => p.id && p.name);
+}
+
+function persistFilterPresets(presets) {
+  localStorage.setItem(FILTER_PRESETS_STORAGE_KEY, JSON.stringify({
+    version: 1,
+    presets,
+  }));
+}
+
+function makeId() {
+  // Pas besoin de crypto.randomUUID pour rester compatible
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 // états
 const tickets = ref([]);
 const loading = ref(true);
@@ -15,16 +101,145 @@ const sortColumn = ref('date'); // Tri par défaut sur la date
 const sortDirection = ref('desc'); // Le plus récent en premier
 
 // Filtres
-const filters = ref({
-  dateStart: '',
-  dateEnd: '',
-  ticketNumber: '',
-  eventName: '',
-  buyer: '',
-  ticketCategory: [], // Array pour les checkboxes
-  priceMin: null,
-  priceMax: null
-});
+const filters = ref(getDefaultFilters());
+
+// Presets de filtres (localStorage)
+const savedFilterPresets = ref([]);
+const selectedPresetId = ref("");
+const presetName = ref("");
+const presetError = ref(null);
+const pendingPresetId = ref(null);
+
+function refreshPresets() {
+  presetError.value = null;
+  try {
+    savedFilterPresets.value = loadFilterPresets();
+  } catch (e) {
+    console.error("Erreur chargement presets:", e);
+    presetError.value = "Impossible de charger les sauvegardes.";
+    savedFilterPresets.value = [];
+  }
+}
+
+function applyPreset(preset) {
+  if (!preset?.filters) return;
+
+  const next = normalizeFilters(preset.filters);
+
+  // Normaliser catégories par rapport aux catégories disponibles (si on a déjà chargé les tickets)
+  if (uniqueCategories.value.length > 0 && Array.isArray(next.ticketCategory)) {
+    const allowed = new Set(uniqueCategories.value);
+    next.ticketCategory = next.ticketCategory.filter(c => allowed.has(c));
+  }
+
+  filters.value = {
+    ...getDefaultFilters(),
+    ...next,
+  };
+}
+
+function loadSelectedPreset() {
+  presetError.value = null;
+  const id = selectedPresetId.value;
+  if (!id) return;
+
+  if (loading.value) {
+    pendingPresetId.value = id;
+    return;
+  }
+
+  const preset = savedFilterPresets.value.find(p => p.id === id);
+  if (!preset) {
+    presetError.value = "Sauvegarde introuvable.";
+    return;
+  }
+  applyPreset(preset);
+}
+
+function saveCurrentFilters() {
+  presetError.value = null;
+  const name = presetName.value.trim();
+  if (!name) {
+    presetError.value = "Donne un nom à la sauvegarde.";
+    return;
+  }
+
+  const now = Date.now();
+  const current = normalizeFilters(filters.value);
+  const presets = [...savedFilterPresets.value];
+
+  const existingIndex = presets.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+  if (existingIndex >= 0) {
+    presets[existingIndex] = {
+      ...presets[existingIndex],
+      name,
+      filters: current,
+      updatedAt: now,
+    };
+    selectedPresetId.value = presets[existingIndex].id;
+  } else {
+    const id = makeId();
+    presets.unshift({
+      id,
+      name,
+      filters: current,
+      createdAt: now,
+      updatedAt: now,
+    });
+    selectedPresetId.value = id;
+  }
+
+  try {
+    persistFilterPresets(presets);
+    savedFilterPresets.value = presets;
+    presetName.value = "";
+  } catch (e) {
+    console.error("Erreur sauvegarde presets:", e);
+    presetError.value = "Impossible de sauvegarder (localStorage).";
+  }
+}
+
+function deleteSelectedPreset() {
+  presetError.value = null;
+  const id = selectedPresetId.value;
+  if (!id) return;
+
+  const preset = savedFilterPresets.value.find(p => p.id === id);
+  if (!preset) return;
+
+  const ok = window.confirm(`Supprimer la sauvegarde "${preset.name}" ?`);
+  if (!ok) return;
+
+  const presets = savedFilterPresets.value.filter(p => p.id !== id);
+  try {
+    persistFilterPresets(presets);
+    savedFilterPresets.value = presets;
+    selectedPresetId.value = "";
+  } catch (e) {
+    console.error("Erreur suppression preset:", e);
+    presetError.value = "Impossible de supprimer la sauvegarde.";
+  }
+}
+
+function resetAllFilters() {
+  presetError.value = null;
+  showCategoryDropdown.value = false;
+
+  // Base defaults
+  filters.value = getDefaultFilters();
+
+  // Si on a déjà les tickets, on remet les defaults "intelligents"
+  if (tickets.value.length > 0) {
+    const cats = new Set(tickets.value.map(t => t.ticketCategory).filter(Boolean));
+    filters.value.ticketCategory = Array.from(cats).sort();
+
+    const prices = tickets.value.map(t => t.priceAmount).filter(p => typeof p === 'number');
+    if (prices.length > 0) {
+      filters.value.priceMin = Math.min(...prices);
+      filters.value.priceMax = Math.max(...prices);
+    }
+  }
+}
 
 const showCategoryDropdown = ref(false);
 
@@ -214,7 +429,82 @@ function formatDateTime(isoString) {
   }
 }
 
+function csvEscape(value) {
+  if (value === null || value === undefined) return '""';
+  const str = String(value);
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
+function exportFilteredTicketsCsv() {
+  // On exporte les lignes correspondant aux filtres (pas seulement la page courante)
+  const rows = sortedTickets.value;
+  if (!rows || rows.length === 0) return;
+
+  const sep = ';';
+  const headers = [
+    'date_achat',
+    'ticket_number',
+    'event_name',
+    'session_date',
+    'session_time',
+    'buyer_first_name',
+    'buyer_last_name',
+    'buyer_email',
+    'buyer_postcode',
+    'ticket_category',
+    'price_amount',
+    'price_currency',
+    'cancellation_reason',
+  ];
+
+  const lines = [];
+  lines.push(headers.map(csvEscape).join(sep));
+
+  for (const t of rows) {
+    const dateRaw = t.generatedAtRaw ?? t.createdAtRaw ?? '';
+    lines.push([
+      formatDateTime(dateRaw),
+      t.ticketNumber ?? '',
+      t.eventName ?? '',
+      t.sessionDate ?? '',
+      t.sessionTime ?? '',
+      t.buyerFirstName ?? '',
+      t.buyerLastName ?? '',
+      t.buyerEmail ?? '',
+      t.buyerPostcode ?? '',
+      t.ticketCategory ?? '',
+      (typeof t.priceAmount === 'number') ? t.priceAmount : '',
+      t.priceCurrency ?? '',
+      t.cancellationReason ?? '',
+    ].map(csvEscape).join(sep));
+  }
+
+  // BOM UTF-8 pour Excel
+  const csv = `\uFEFF${lines.join('\n')}`;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const d = new Date();
+  const filename = `tickets_${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}_${pad2(d.getHours())}-${pad2(d.getMinutes())}.csv`;
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 onMounted(async () => {
+  // Charger les presets dès le départ
+  try {
+    refreshPresets();
+  } catch {
+    // déjà géré
+  }
+
   loading.value = true;
   error.value = null;
 
@@ -360,6 +650,15 @@ onMounted(async () => {
       filters.value.priceMax = Math.max(...prices);
     }
 
+    // Appliquer un preset demandé pendant le chargement
+    if (pendingPresetId.value) {
+      const preset = savedFilterPresets.value.find(p => p.id === pendingPresetId.value);
+      pendingPresetId.value = null;
+      if (preset) {
+        applyPreset(preset);
+      }
+    }
+
     if (tickets.value.length === 0) {
       console.warn("⚠️ Aucun ticket trouvé dans la collection 'tickets'");
       console.info("💡 Pour ajouter des tickets, utilisez le simulateur Petzi ou envoyez des webhooks");
@@ -413,6 +712,15 @@ onMounted(async () => {
 
       <!-- Top Pagination Controls -->
       <div v-if="!loading && tickets.length > 0" class="flex items-center gap-4 text-sm">
+        <button
+          @click="exportFilteredTicketsCsv"
+          :disabled="sortedTickets.length === 0"
+          class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Exporter les tickets filtrés en CSV"
+        >
+          Exporter CSV
+        </button>
+
         <div class="flex items-center gap-2">
           <select v-model.number="itemsPerPage" class="border rounded px-1 py-0.5">
             <option :value="10">10</option>
@@ -440,6 +748,66 @@ onMounted(async () => {
             Suivant
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Sauvegardes de filtres -->
+    <div class="mb-3 flex flex-wrap items-end gap-2 text-sm">
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-gray-600">Sauvegardes</label>
+        <div class="flex items-center gap-2">
+          <select v-model="selectedPresetId" class="border rounded px-2 py-1 min-w-[220px]">
+            <option value="">— Choisir —</option>
+            <option v-for="p in savedFilterPresets" :key="p.id" :value="p.id">
+              {{ p.name }}
+            </option>
+          </select>
+          <button
+            @click="loadSelectedPreset"
+            :disabled="!selectedPresetId"
+            class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Charger
+          </button>
+          <button
+            @click="deleteSelectedPreset"
+            :disabled="!selectedPresetId"
+            class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Supprimer
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-gray-600">Enregistrer la sélection actuelle</label>
+        <div class="flex items-center gap-2">
+          <input
+            v-model="presetName"
+            type="text"
+            placeholder="Nom de la sauvegarde"
+            class="border rounded px-2 py-1 min-w-[220px]"
+            @keydown.enter.prevent="saveCurrentFilters"
+          />
+          <button
+            @click="saveCurrentFilters"
+            class="px-2 py-1 border rounded hover:bg-gray-100"
+          >
+            Sauvegarder
+          </button>
+
+          <button
+            @click="resetAllFilters"
+            class="px-2 py-1 border rounded hover:bg-gray-100"
+            title="Remet les filtres à zéro"
+          >
+            Réinitialiser
+          </button>
+        </div>
+      </div>
+
+      <div v-if="presetError" class="text-xs text-red-600 self-end">
+        {{ presetError }}
       </div>
     </div>
 
