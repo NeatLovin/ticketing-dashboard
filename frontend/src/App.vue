@@ -1,5 +1,38 @@
 <template>
   <div class="app-shell">
+    <transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="showSplash"
+        class="fixed inset-0 z-[3001] flex items-center justify-center bg-zinc-950"
+        aria-label="Chargement de l'application"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="flex flex-col items-center justify-center text-center">
+          <div class="mb-5 text-lg sm:text-xl font-semibold tracking-[0.22em] uppercase text-zinc-100">
+            TICKETING DASHBOARD
+          </div>
+
+          <img
+            src="/cac-logo-white.svg"
+            alt="Case à Chocs"
+            class="h-20 sm:h-24 w-auto splash-logo"
+          />
+
+          <div class="mt-5 text-xs sm:text-sm font-medium tracking-wide text-zinc-300">
+            by NEATLOVIN and GARD11
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <header class="app-nav">
       <div class="app-nav-inner">
         <div class="app-brand">
@@ -86,6 +119,11 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import { TicketsService } from "./services/ticketsService";
 
+const SPLASH_SEEN_KEY = "cac:splashSeen:v1";
+const SPLASH_DURATION_MS = 3000;
+
+const showSplash = ref(false);
+
 const TOAST_DURATION_MS = 3200;
 
 const toastDurationMs = TOAST_DURATION_MS;
@@ -99,6 +137,7 @@ const saleToast = ref({
 
 let hideTimer = null;
 let unsubscribeSales = null;
+let splashTimer = null;
 
 function formatCurrency(value) {
   const num = typeof value === "number" ? value : parseFloat(value);
@@ -131,6 +170,19 @@ function showSaleToast(ticket) {
 }
 
 onMounted(() => {
+  try {
+    const alreadySeen = window.localStorage.getItem(SPLASH_SEEN_KEY) === "1";
+    if (!alreadySeen) {
+      showSplash.value = true;
+      window.localStorage.setItem(SPLASH_SEEN_KEY, "1");
+      splashTimer = window.setTimeout(() => {
+        showSplash.value = false;
+      }, SPLASH_DURATION_MS);
+    }
+  } catch {
+    // localStorage indisponible (mode privé / blocage) → on n'affiche pas le splash
+  }
+
   unsubscribeSales = TicketsService.subscribeToNewTicketSales((ticket) => {
     showSaleToast(ticket);
   });
@@ -139,10 +191,40 @@ onMounted(() => {
 onUnmounted(() => {
   if (unsubscribeSales) unsubscribeSales();
   if (hideTimer) window.clearTimeout(hideTimer);
+  if (splashTimer) window.clearTimeout(splashTimer);
 });
 </script>
 
 <style scoped>
+@keyframes splash-logo {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
+.splash-logo {
+  animation: splash-logo 3s ease-in-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-logo {
+    animation: none;
+  }
+}
+
 @keyframes toast-progress {
   from {
     transform: scaleX(1);
