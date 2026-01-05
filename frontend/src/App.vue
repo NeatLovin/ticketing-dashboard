@@ -17,6 +17,14 @@
           <router-link to="/overview" class="app-link" active-class="app-link-active">Overview</router-link>
           <router-link to="/dashboard" class="app-link" active-class="app-link-active">Dashboard</router-link>
           <router-link to="/tickets" class="app-link" active-class="app-link-active">Tickets</router-link>
+          <a
+            href="https://case-a-chocs.ch/"
+            class="app-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Site officiel
+          </a>
         </nav>
       </div>
     </header>
