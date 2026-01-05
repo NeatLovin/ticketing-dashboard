@@ -26,6 +26,16 @@
           >
             Ouvrir la console Emulator
           </a>
+
+          <button
+            v-if="isDev"
+            type="button"
+            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+            @click="clearLocalStorageCache"
+            title="Supprime tout le localStorage puis recharge la page"
+          >
+            Vider le cache (local)
+          </button>
         </div>
       </div>
     </header>
@@ -238,6 +248,15 @@ import {
 } from "firebase/firestore";
 
 const isDev = import.meta.env.DEV;
+
+function clearLocalStorageCache() {
+  try {
+    window.localStorage.clear();
+  } catch {
+    // ignore
+  }
+  window.location.reload();
+}
 
 const envOk = computed(() => {
   const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
