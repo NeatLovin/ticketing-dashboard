@@ -11,8 +11,38 @@
         @update:filters="handleFiltersUpdate"
       />
 
-      <div v-if="loading" class="text-center py-10">
-        <p class="text-zinc-300">Chargement des données...</p>
+      <div v-if="loading" class="space-y-6">
+        <div class="panel p-6">
+          <SkeletonBlock class-name="h-7 w-56 mb-6" />
+          <SkeletonBlock class-name="h-[400px] w-full" />
+        </div>
+
+        <div class="panel p-6">
+          <SkeletonBlock class-name="h-7 w-80 mb-6" />
+          <SkeletonBlock class-name="h-[350px] w-full" />
+        </div>
+
+        <div class="panel p-6">
+          <SkeletonBlock class-name="h-7 w-72 mb-6" />
+          <SkeletonBlock class-name="h-[500px] w-full" />
+        </div>
+
+        <div class="panel p-6">
+          <SkeletonBlock class-name="h-7 w-40 mb-6" />
+          <SkeletonBlock class-name="h-28 w-full mb-6" />
+          <SkeletonBlock class-name="h-6 w-64 mb-3" />
+          <SkeletonBlock class-name="h-[300px] w-full" />
+        </div>
+
+        <div class="panel p-6">
+          <SkeletonBlock class-name="h-7 w-[520px] max-w-full mb-6" />
+          <SkeletonBlock class-name="h-10 w-[420px] max-w-full mb-6" />
+          <SkeletonBlock class-name="h-28 w-full mb-6" />
+          <SkeletonBlock class-name="h-6 w-56 mb-3" />
+          <SkeletonBlock class-name="h-[400px] w-full mb-6" />
+          <SkeletonBlock class-name="h-6 w-48 mb-3" />
+          <SkeletonBlock class-name="h-[400px] w-full" />
+        </div>
       </div>
 
       <div v-else class="space-y-6">
@@ -78,6 +108,7 @@ import GeographicMap from "../components/GeographicMap.vue";
 import AverageBasket from "../components/AverageBasket.vue";
 import MonthlyComparison from "../components/MonthlyComparison.vue";
 import DashboardFilters from "../components/DashboardFilters.vue";
+import SkeletonBlock from "../components/SkeletonBlock.vue";
 import { TicketsService } from "../services/ticketsService";
 
 // Par défaut, afficher les deux courbes

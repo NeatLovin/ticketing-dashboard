@@ -5,8 +5,47 @@
       <p class="page-subtitle">KPIs clés, top événements et dernières ventes.</p>
     </div>
 
-      <div v-if="loading" class="text-center py-10">
-        <p class="text-zinc-300">Chargement des données...</p>
+      <div v-if="loading" class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div v-for="i in 8" :key="i" class="panel p-6">
+            <div class="flex items-center justify-between">
+              <div class="space-y-2">
+                <SkeletonBlock class-name="h-3 w-28" />
+                <SkeletonBlock class-name="h-8 w-32" />
+              </div>
+              <SkeletonBlock class-name="h-12 w-12 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="panel overflow-hidden">
+            <div class="p-6 border-b border-gray-100">
+              <SkeletonBlock class-name="h-6 w-80 max-w-full" />
+            </div>
+            <div class="p-6 space-y-4">
+              <div v-for="r in 5" :key="r" class="flex items-center justify-between gap-4">
+                <SkeletonBlock class-name="h-4 w-64 max-w-full" />
+                <SkeletonBlock class-name="h-4 w-12" />
+                <SkeletonBlock class-name="h-4 w-20" />
+              </div>
+            </div>
+          </div>
+
+          <div class="panel overflow-hidden">
+            <div class="p-6 border-b border-gray-100">
+              <SkeletonBlock class-name="h-6 w-48" />
+            </div>
+            <div class="p-6 space-y-4">
+              <div v-for="r in 5" :key="r" class="flex items-center justify-between gap-4">
+                <SkeletonBlock class-name="h-4 w-40" />
+                <SkeletonBlock class-name="h-4 w-56 max-w-full" />
+                <SkeletonBlock class-name="h-4 w-20" />
+                <SkeletonBlock class-name="h-4 w-24" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-else class="space-y-6">
@@ -220,6 +259,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { TicketsService } from '../services/ticketsService';
+import SkeletonBlock from '../components/SkeletonBlock.vue';
 
 const tickets = ref([]);
 const loading = ref(true);

@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
+import SkeletonBlock from "../components/SkeletonBlock.vue";
 
 // états
 const tickets = ref([]);
@@ -443,8 +444,31 @@ onMounted(async () => {
     </div>
 
     <div v-if="loading" class="mt-4">
-      Chargement des tickets…
-      <span v-if="slowLoad" class="ml-2 text-sm text-gray-500">c'est un peu long, merci de patienter</span>
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <SkeletonBlock class-name="h-4 w-40" />
+          <SkeletonBlock class-name="h-4 w-24" />
+        </div>
+
+        <div class="border rounded overflow-hidden">
+          <div class="bg-gray-100 px-2 py-2 flex gap-2">
+            <SkeletonBlock class-name="h-4 w-32" />
+            <SkeletonBlock class-name="h-4 w-20" />
+            <SkeletonBlock class-name="h-4 w-44" />
+            <SkeletonBlock class-name="h-4 w-40" />
+            <SkeletonBlock class-name="h-4 w-24" />
+          </div>
+          <div class="divide-y">
+            <div v-for="i in 10" :key="i" class="px-2 py-3 flex gap-2 items-center">
+              <SkeletonBlock class-name="h-4 w-32" />
+              <SkeletonBlock class-name="h-4 w-20" />
+              <SkeletonBlock class-name="h-4 w-44" />
+              <SkeletonBlock class-name="h-4 w-40" />
+              <SkeletonBlock class-name="h-4 w-24" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div v-else-if="error" class="mt-4 text-red-600">Erreur : {{ error }}</div>
