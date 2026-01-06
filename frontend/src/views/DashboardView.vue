@@ -115,10 +115,10 @@ import DashboardFilters from "../components/DashboardFilters.vue";
 import SkeletonBlock from "../components/SkeletonBlock.vue";
 import { TicketsService } from "../services/ticketsService";
 
-// Par défaut, afficher les deux courbes
+// Par défaut : ventes cumulées affichées, ventes par période masquées, mode hebdomadaire
 const showCumulative = ref(true);
-const showHourly = ref(true);
-const viewMode = ref('daily');
+const showHourly = ref(false);
+const viewMode = ref('weekly');
 
 const allTickets = ref([]);
 const loading = ref(true);

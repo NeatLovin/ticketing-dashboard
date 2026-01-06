@@ -84,7 +84,8 @@ const props = defineProps({
   tickets: { type: Array, default: () => [] }
 });
 
-const selectedYears = ref([new Date().getFullYear()]);
+const selectedYears = ref([]);
+const hasInitializedYears = ref(false);
 
 const getTicketDate = (ticket) => {
   return TicketsService.toDate(ticket.generatedAt || ticket.createdAt);
@@ -105,11 +106,24 @@ const availableYears = computed(() => {
 });
 
 // Mettre à jour les années sélectionnées si nécessaire
-watch(availableYears, (years) => {
-  if (years.length > 0 && selectedYears.value.length === 0) {
-    selectedYears.value = [years[0]];
-  }
-});
+// Par défaut : sélectionner les 3 dernières années disponibles.
+watch(
+  availableYears,
+  (years) => {
+    if (!Array.isArray(years) || years.length === 0) return;
+
+    if (!hasInitializedYears.value) {
+      selectedYears.value = years.slice(0, 3);
+      hasInitializedYears.value = true;
+      return;
+    }
+
+    // Garder la sélection cohérente avec les années disponibles (sans forcer un choix)
+    const allowed = new Set(years);
+    selectedYears.value = selectedYears.value.filter((y) => allowed.has(y));
+  },
+  { immediate: true }
+);
 
 // Filtrer les tickets pour une année donnée
 const getTicketsForYear = (year) => {
