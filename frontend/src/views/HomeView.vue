@@ -104,21 +104,31 @@
           <div class="rounded-xl border border-zinc-200 p-4">
             <div class="flex items-start justify-between gap-3">
               <div>
-                <div class="text-sm font-semibold text-zinc-900">Webhook</div>
+                <div class="text-sm font-semibold text-zinc-900">Vérifications</div>
                 <div class="mt-1 text-sm text-zinc-600">
-                  <span v-if="webhook.loading">Lecture Firestore…</span>
-                  <span v-else-if="webhook.error">{{ webhook.error }}</span>
+                  <span v-if="anyLoading">Vérification en cours…</span>
                   <span v-else>
-                    <span v-if="webhook.lastReceivedAtMs">Dernier webhook reçu il y a {{ webhookAgeMinutes }} min</span>
-                    <span v-else>Aucun webhook reçu</span>
-                    <span v-if="webhook.lastHttpStatus" class="text-zinc-500"> — HTTP {{ webhook.lastHttpStatus }}</span>
+                    <span v-if="healthCheckAgeMinutes !== null">Dernière vérification il y a {{ healthCheckAgeMinutes }} min</span>
+                    <span v-else>Jamais vérifié</span>
                   </span>
                 </div>
               </div>
 
-              <span class="px-2.5 py-1 rounded-lg text-xs font-bold" :class="statusPillClass(webhook.ok, webhook.loading)">
-                {{ webhook.loading ? '…' : webhook.ok ? 'OK' : 'KO' }}
-              </span>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-60 disabled:hover:bg-white"
+                  :disabled="anyLoading"
+                  @click="runHealthChecks"
+                  title="Relance les vérifications Firestore + tickets"
+                >
+                  Rafraîchir
+                </button>
+
+                <span class="px-2.5 py-1 rounded-lg text-xs font-bold" :class="statusPillClass(firestore.connectionOk && firestore.permissionsOk, anyLoading)">
+                  {{ anyLoading ? '…' : (firestore.connectionOk && firestore.permissionsOk) ? 'OK' : 'KO' }}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -149,7 +159,11 @@
                   <span v-if="tickets.loading">Vérification…</span>
                   <span v-else-if="tickets.error">{{ tickets.error }}</span>
                   <span v-else>
-                    {{ tickets.hasData ? 'Au moins 1 document présent' : 'Aucun document trouvé' }}
+                    <span v-if="tickets.hasData">
+                      Au moins 1 document présent
+                      <span v-if="tickets.lastCreatedAtMs" class="text-zinc-500">— dernier il y a {{ ticketAgeMinutes }} min</span>
+                    </span>
+                    <span v-else>Aucun document trouvé</span>
                   </span>
                 </div>
               </div>
@@ -163,70 +177,22 @@
           <div class="rounded-xl border border-zinc-200 p-4">
             <div class="flex items-start justify-between gap-3">
               <div>
-                <div class="text-sm font-semibold text-zinc-900">Navigation</div>
-                <div class="mt-1 text-sm text-zinc-600">Accès rapide aux vues de travail</div>
+                <div class="text-sm font-semibold text-zinc-900">.env.local frontend</div>
+                <div class="mt-1 text-sm text-zinc-600">
+                  <span v-if="envOk">Variables Vite Firebase détectées (API key + projectId)</span>
+                  <span v-else>
+                    Variables manquantes. Crée/complète <span class="font-semibold">frontend/.env.local</span> puis redémarre le serveur.
+                  </span>
+                  <div class="mt-1 text-zinc-500">
+                    Cible Firestore : <span class="font-semibold">{{ isEmulator ? 'LOCAL (Emulator)' : 'PROD (Cloud)' }}</span>
+                  </div>
+                </div>
               </div>
 
-              <div class="flex gap-2">
-                <router-link to="/tickets" class="px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-900 hover:bg-zinc-50">
-                  Tickets
-                </router-link>
-                <router-link to="/dashboard" class="px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-900 hover:bg-zinc-50">
-                  Dashboard
-                </router-link>
-              </div>
+              <span class="px-2.5 py-1 rounded-lg text-xs font-bold" :class="statusPillClass(envOk, false)">
+                {{ envOk ? 'OK' : 'KO' }}
+              </span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section v-if="!checklistComplete" class="panel p-6">
-        <div class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Setup checklist</div>
-        <div class="mt-1 text-xl font-bold text-zinc-900">Onboarding technique</div>
-
-        <div class="mt-4 space-y-2">
-          <div class="flex items-start justify-between gap-4 rounded-xl border border-zinc-200 p-4">
-            <div>
-              <div class="text-sm font-semibold text-zinc-900">.env.local frontend présent</div>
-              <div class="mt-1 text-sm text-zinc-600">Variables Vite Firebase détectées (API key + projectId)</div>
-            </div>
-            <span class="px-2.5 py-1 rounded-lg text-xs font-bold" :class="statusPillClass(envOk, false)">
-              {{ envOk ? 'OK' : 'KO' }}
-            </span>
-          </div>
-
-          <div class="flex items-start justify-between gap-4 rounded-xl border border-zinc-200 p-4">
-            <div>
-              <div class="text-sm font-semibold text-zinc-900">Accès Firestore fonctionnel</div>
-              <div class="mt-1 text-sm text-zinc-600">Lecture test sur la collection tickets</div>
-            </div>
-            <span class="px-2.5 py-1 rounded-lg text-xs font-bold" :class="statusPillClass(firestore.connectionOk && firestore.permissionsOk, firestore.loading)">
-              {{ firestore.loading ? '…' : (firestore.connectionOk && firestore.permissionsOk) ? 'OK' : 'KO' }}
-            </span>
-          </div>
-
-          <div class="flex items-start justify-between gap-4 rounded-xl border border-zinc-200 p-4">
-            <div>
-              <div class="text-sm font-semibold text-zinc-900">Données présentes</div>
-              <div class="mt-1 text-sm text-zinc-600">Au moins 1 document dans tickets</div>
-            </div>
-            <span class="px-2.5 py-1 rounded-lg text-xs font-bold" :class="statusPillClass(tickets.hasData, tickets.loading)">
-              {{ tickets.loading ? '…' : tickets.hasData ? 'OK' : 'KO' }}
-            </span>
-          </div>
-
-          <div class="flex items-start justify-between gap-4 rounded-xl border border-zinc-200 p-4">
-            <div>
-              <div class="text-sm font-semibold text-zinc-900">Statut webhook (optionnel)</div>
-              <div class="mt-1 text-sm text-zinc-600">
-                <span v-if="webhook.loading">Lecture…</span>
-                <span v-else-if="webhook.lastReceivedAtMs">Dernier webhook il y a {{ webhookAgeMinutes }} min</span>
-                <span v-else>Aucun webhook reçu</span>
-              </div>
-            </div>
-            <span class="px-2.5 py-1 rounded-lg text-xs font-bold" :class="statusPillClass(webhook.ok, webhook.loading)">
-              {{ webhook.loading ? '…' : webhook.ok ? 'OK' : 'KO' }}
-            </span>
           </div>
         </div>
       </section>
@@ -239,8 +205,6 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 import { db } from "../firebase";
 import {
   collection,
-  doc,
-  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -303,6 +267,8 @@ function statusPillClass(ok, loading) {
 const nowMs = ref(Date.now());
 let nowIntervalId;
 
+const lastHealthCheckAtMs = ref(null);
+
 const firestore = ref({
   loading: true,
   connectionOk: false,
@@ -313,29 +279,24 @@ const firestore = ref({
 const tickets = ref({
   loading: true,
   hasData: false,
+  lastCreatedAtMs: null,
   error: "",
 });
 
-const webhook = ref({
-  loading: true,
-  ok: false,
-  lastReceivedAtMs: null,
-  lastHttpStatus: null,
-  error: "",
-});
+const anyLoading = computed(() => firestore.value.loading || tickets.value.loading);
 
-const anyLoading = computed(() => firestore.value.loading || tickets.value.loading || webhook.value.loading);
-
-const webhookAgeMinutes = computed(() => {
-  if (!webhook.value.lastReceivedAtMs) return null;
-  const diffMs = Math.max(0, nowMs.value - webhook.value.lastReceivedAtMs);
+const healthCheckAgeMinutes = computed(() => {
+  if (!lastHealthCheckAtMs.value) return null;
+  const diffMs = Math.max(0, nowMs.value - lastHealthCheckAtMs.value);
   return Math.floor(diffMs / 60000);
 });
 
-const checklistComplete = computed(() => {
-  const firestoreOk = firestore.value.connectionOk && firestore.value.permissionsOk;
-  return envOk.value && firestoreOk && tickets.value.hasData;
+const ticketAgeMinutes = computed(() => {
+  if (!tickets.value.lastCreatedAtMs) return null;
+  const diffMs = Math.max(0, nowMs.value - tickets.value.lastCreatedAtMs);
+  return Math.floor(diffMs / 60000);
 });
+
 
 function toMillis(value) {
   if (!value) return null;
@@ -355,7 +316,7 @@ function toMillis(value) {
 
 async function checkFirestoreAndTickets() {
   firestore.value = { loading: true, connectionOk: false, permissionsOk: false, error: "" };
-  tickets.value = { loading: true, hasData: false, error: "" };
+  tickets.value = { loading: true, hasData: false, lastCreatedAtMs: null, error: "" };
 
   if (!db) {
     firestore.value = { loading: false, connectionOk: false, permissionsOk: false, error: "Firestore non initialisé" };
@@ -368,8 +329,10 @@ async function checkFirestoreAndTickets() {
     const q = query(ticketsRef, orderBy("createdAt", "desc"), limit(1));
     const snap = await getDocs(q);
 
+    const lastCreatedAtMs = !snap.empty ? toMillis(snap.docs[0]?.data()?.createdAt) : null;
+
     firestore.value = { loading: false, connectionOk: true, permissionsOk: true, error: "" };
-    tickets.value = { loading: false, hasData: !snap.empty, error: "" };
+    tickets.value = { loading: false, hasData: !snap.empty, lastCreatedAtMs, error: "" };
   } catch (error) {
     const permissionDenied = isPermissionDenied(error);
     const unavailable = isConnectionUnavailable(error);
@@ -388,70 +351,15 @@ async function checkFirestoreAndTickets() {
     tickets.value = {
       loading: false,
       hasData: false,
+      lastCreatedAtMs: null,
       error: permissionDenied ? "Lecture tickets refusée" : "Impossible de lire tickets",
     };
   }
 }
 
-async function checkWebhookStatus() {
-  webhook.value = { loading: true, ok: false, lastReceivedAtMs: null, lastHttpStatus: null, error: "" };
-
-  if (!db) {
-    webhook.value = { loading: false, ok: false, lastReceivedAtMs: null, lastHttpStatus: null, error: "Firestore non initialisé" };
-    return;
-  }
-
-  try {
-    const statusRef = doc(db, "system", "webhookStatus");
-    const snap = await getDoc(statusRef);
-
-    if (!snap.exists()) {
-      webhook.value = { loading: false, ok: false, lastReceivedAtMs: null, lastHttpStatus: null, error: "Document system/webhookStatus introuvable" };
-      return;
-    }
-
-    const data = snap.data() ?? {};
-    const lastReceivedAtMs =
-      toMillis(data.lastReceivedAt) ??
-      toMillis(data.lastReceivedAtMs) ??
-      toMillis(data.lastReceivedAtMillis) ??
-      toMillis(data.last_received_at) ??
-      toMillis(data.lastWebhookReceivedAt) ??
-      toMillis(data.updatedAt) ??
-      null;
-
-    const lastHttpStatus =
-      (typeof data.lastHttpStatus === "number" ? data.lastHttpStatus : null) ??
-      (typeof data.lastStatusCode === "number" ? data.lastStatusCode : null) ??
-      (typeof data.last_http_status === "number" ? data.last_http_status : null) ??
-      (typeof data.last_status_code === "number" ? data.last_status_code : null) ??
-      null;
-
-    const explicitOk = typeof data.ok === "boolean" ? data.ok : null;
-    const statusString = typeof data.status === "string" ? data.status.toLowerCase() : null;
-
-    const ok =
-      explicitOk ??
-      (statusString ? ["ok", "healthy", "up"].includes(statusString) : null) ??
-      (typeof lastHttpStatus === "number" ? lastHttpStatus >= 200 && lastHttpStatus < 300 : null) ??
-      !!lastReceivedAtMs;
-
-    webhook.value = {
-      loading: false,
-      ok,
-      lastReceivedAtMs,
-      lastHttpStatus,
-      error: "",
-    };
-  } catch (error) {
-    webhook.value = {
-      loading: false,
-      ok: false,
-      lastReceivedAtMs: null,
-      lastHttpStatus: null,
-      error: isPermissionDenied(error) ? "Permissions insuffisantes (webhookStatus)" : "Erreur de lecture webhookStatus",
-    };
-  }
+async function runHealthChecks() {
+  await checkFirestoreAndTickets();
+  lastHealthCheckAtMs.value = Date.now();
 }
 
 onMounted(async () => {
@@ -459,7 +367,7 @@ onMounted(async () => {
     nowMs.value = Date.now();
   }, 30_000);
 
-  await Promise.all([checkFirestoreAndTickets(), checkWebhookStatus()]);
+  await runHealthChecks();
 });
 
 onUnmounted(() => {
