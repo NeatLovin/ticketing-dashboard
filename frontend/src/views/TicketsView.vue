@@ -11,7 +11,7 @@ function getDefaultFilters() {
     dateStart: "",
     dateEnd: "",
     ticketNumber: "",
-    eventName: "",
+    eventName: [],
     buyer: "",
     ticketCategory: [],
     priceMin: null,
@@ -30,7 +30,10 @@ function normalizeFilters(input) {
   normalized.dateStart = typeof normalized.dateStart === "string" ? normalized.dateStart : "";
   normalized.dateEnd = typeof normalized.dateEnd === "string" ? normalized.dateEnd : "";
   normalized.ticketNumber = typeof normalized.ticketNumber === "string" ? normalized.ticketNumber : "";
-  normalized.eventName = typeof normalized.eventName === "string" ? normalized.eventName : "";
+  // rétro-compat: eventName pouvait être une string
+  normalized.eventName = Array.isArray(normalized.eventName)
+    ? normalized.eventName.map(String).filter(Boolean)
+    : (typeof normalized.eventName === "string" ? (normalized.eventName ? [normalized.eventName] : []) : []);
   normalized.buyer = typeof normalized.buyer === "string" ? normalized.buyer : "";
 
   normalized.ticketCategory = Array.isArray(normalized.ticketCategory)
@@ -134,7 +137,7 @@ function filtersFromQuery(query) {
   if (hasOwn(query, TICKETS_QUERY_KEYS.dateStart)) draft.dateStart = asString(query[TICKETS_QUERY_KEYS.dateStart]);
   if (hasOwn(query, TICKETS_QUERY_KEYS.dateEnd)) draft.dateEnd = asString(query[TICKETS_QUERY_KEYS.dateEnd]);
   if (hasOwn(query, TICKETS_QUERY_KEYS.ticketNumber)) draft.ticketNumber = asString(query[TICKETS_QUERY_KEYS.ticketNumber]);
-  if (hasOwn(query, TICKETS_QUERY_KEYS.eventName)) draft.eventName = asString(query[TICKETS_QUERY_KEYS.eventName]);
+  if (hasOwn(query, TICKETS_QUERY_KEYS.eventName)) draft.eventName = asStringArray(query[TICKETS_QUERY_KEYS.eventName]);
   if (hasOwn(query, TICKETS_QUERY_KEYS.buyer)) draft.buyer = asString(query[TICKETS_QUERY_KEYS.buyer]);
 
   if (hasOwn(query, TICKETS_QUERY_KEYS.ticketCategory)) {
@@ -167,8 +170,22 @@ function buildTicketsQueryFromFilters(currentFilters) {
   setOrDelete(TICKETS_QUERY_KEYS.dateStart, (currentFilters.dateStart || "").trim());
   setOrDelete(TICKETS_QUERY_KEYS.dateEnd, (currentFilters.dateEnd || "").trim());
   setOrDelete(TICKETS_QUERY_KEYS.ticketNumber, (currentFilters.ticketNumber || "").trim());
-  setOrDelete(TICKETS_QUERY_KEYS.eventName, (currentFilters.eventName || "").trim());
   setOrDelete(TICKETS_QUERY_KEYS.buyer, (currentFilters.buyer || "").trim());
+
+  const events = Array.isArray(currentFilters.eventName)
+    ? currentFilters.eventName.map(String).filter(Boolean)
+    : [];
+  const allEvents = uniqueEventNames.value;
+  const shouldPersistEvents =
+    events.length > 0 &&
+    allEvents.length > 0 &&
+    events.length < allEvents.length;
+
+  if (shouldPersistEvents) {
+    nextQuery[TICKETS_QUERY_KEYS.eventName] = events;
+  } else {
+    delete nextQuery[TICKETS_QUERY_KEYS.eventName];
+  }
 
   const categories = Array.isArray(currentFilters.ticketCategory)
     ? currentFilters.ticketCategory.filter(Boolean)
@@ -272,6 +289,12 @@ function applyPreset(preset) {
     next.ticketCategory = next.ticketCategory.filter(c => allowed.has(c));
   }
 
+  // Normaliser événements par rapport aux événements disponibles
+  if (uniqueEventNames.value.length > 0 && Array.isArray(next.eventName)) {
+    const allowed = new Set(uniqueEventNames.value);
+    next.eventName = next.eventName.filter(e => allowed.has(e));
+  }
+
   filters.value = {
     ...getDefaultFilters(),
     ...next,
@@ -364,6 +387,8 @@ function deleteSelectedPreset() {
 function resetAllFilters() {
   presetError.value = null;
   showCategoryDropdown.value = false;
+  showEventDropdown.value = false;
+  eventSearchQuery.value = '';
 
   // Base defaults
   filters.value = getDefaultFilters();
@@ -397,15 +422,81 @@ watch(
 
 const showCategoryDropdown = ref(false);
 
+const showEventDropdown = ref(false);
+const eventSearchQuery = ref('');
+
 const uniqueCategories = computed(() => {
   const cats = new Set(tickets.value.map(t => t.ticketCategory).filter(Boolean));
   return Array.from(cats).sort();
 });
 
-const uniqueEvents = computed(() => {
-  const events = new Set(tickets.value.map(t => t.eventName).filter(Boolean));
-  return events.size;
+const uniqueEventNames = computed(() => {
+  const names = new Set(
+    tickets.value
+      .map(t => (t?.eventName ?? ''))
+      .map(v => String(v).trim())
+      .filter(Boolean)
+  );
+  return Array.from(names).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
 });
+
+const filteredEventNames = computed(() => {
+  const q = String(eventSearchQuery.value || '').trim().toLowerCase();
+  if (!q) return uniqueEventNames.value;
+  return uniqueEventNames.value.filter(name => name.toLowerCase().includes(q));
+});
+
+const uniqueEvents = computed(() => uniqueEventNames.value.length);
+
+const areAllFilteredEventsSelected = computed(() => {
+  if (filteredEventNames.value.length === 0) return false;
+  const selected = Array.isArray(filters.value.eventName) ? filters.value.eventName : [];
+  return filteredEventNames.value.every(name => selected.includes(name));
+});
+
+function toggleAllFilteredEvents() {
+  const visible = filteredEventNames.value;
+  if (visible.length === 0) return;
+
+  const selected = new Set(Array.isArray(filters.value.eventName) ? filters.value.eventName : []);
+
+  if (areAllFilteredEventsSelected.value) {
+    for (const name of visible) selected.delete(name);
+  } else {
+    for (const name of visible) selected.add(name);
+  }
+
+  filters.value.eventName = Array.from(selected);
+}
+
+function toggleEventName(name) {
+  const eventName = String(name || '').trim();
+  if (!eventName) return;
+
+  const selected = Array.isArray(filters.value.eventName) ? [...filters.value.eventName] : [];
+  if (selected.includes(eventName)) {
+    filters.value.eventName = selected.filter(e => e !== eventName);
+  } else {
+    selected.push(eventName);
+    filters.value.eventName = selected;
+  }
+}
+
+function selectEventName(name) {
+  // compat: utilisé pour "Tout" depuis le template
+  const v = String(name || '').trim();
+  filters.value.eventName = v ? [v] : [];
+  showEventDropdown.value = false;
+}
+
+watch(uniqueEventNames, (names) => {
+  const allowed = new Set(names);
+  if (!Array.isArray(filters.value.eventName) || filters.value.eventName.length === 0) return;
+  const next = filters.value.eventName.filter(e => allowed.has(e));
+  if (next.length !== filters.value.eventName.length) {
+    filters.value.eventName = next;
+  }
+}, { immediate: true });
 
 const totalRevenue = computed(() => {
   return sortedTickets.value
@@ -482,7 +573,11 @@ const sortedTickets = computed(() => {
       if (f.dateEnd && dateYMD > f.dateEnd) return false;
     }
     if (f.ticketNumber && !(t.ticketNumber || '').toLowerCase().includes(f.ticketNumber.toLowerCase())) return false;
-    if (f.eventName && !(t.eventName || '').toLowerCase().includes(f.eventName.toLowerCase())) return false;
+
+    // Filtre Événement (liste)
+    if (Array.isArray(f.eventName) && f.eventName.length > 0) {
+      if (!f.eventName.includes(t.eventName)) return false;
+    }
     if (f.buyer) {
       const term = f.buyer.toLowerCase();
       const name = `${t.buyerFirstName || ''} ${t.buyerLastName || ''}`.toLowerCase();
@@ -978,12 +1073,74 @@ onUnmounted(() => {
 
         <div class="flex flex-col gap-2">
           <label class="text-xs text-zinc-600 font-medium">Événement</label>
-          <input 
-            v-model="filters.eventName" 
-            type="text" 
-            placeholder="Rechercher..."
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          <div class="relative">
+            <button
+              @click.stop="showEventDropdown = !showEventDropdown"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white flex justify-between items-center"
+            >
+              <span class="truncate text-zinc-700">
+                {{ (filters.eventName?.length ?? 0) ? `${filters.eventName.length} sélect.` : 'Tous' }}
+              </span>
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <div
+              v-if="showEventDropdown"
+              @click.stop="showEventDropdown = false"
+              class="fixed inset-0 z-40"
+            ></div>
+
+            <div
+              v-if="showEventDropdown"
+              @click.stop
+              class="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto"
+            >
+              <div class="p-2 border-b border-gray-100 sticky top-0 bg-white z-10 space-y-2">
+                <input
+                  v-model="eventSearchQuery"
+                  type="text"
+                  placeholder="Rechercher un événement..."
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  @click.stop
+                />
+                <button
+                  @click="filters.eventName = []"
+                  class="text-xs text-blue-600 hover:underline font-medium"
+                >
+                  Tous les événements
+                </button>
+              </div>
+
+              <div class="p-2 space-y-1">
+                <button
+                  type="button"
+                  @click="toggleAllFilteredEvents"
+                  class="w-full text-left px-2 py-1.5 hover:bg-gray-50 rounded text-xs font-medium text-blue-700"
+                >
+                  {{ areAllFilteredEventsSelected ? 'Tout désélectionner' : 'Tout sélectionner' }}
+                </button>
+
+                <label
+                  v-for="name in filteredEventNames"
+                  :key="name"
+                  class="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="filters.eventName.includes(name)"
+                    class="rounded text-blue-600 focus:ring-blue-500"
+                    @change.stop="toggleEventName(name)"
+                  />
+                  <span class="text-sm text-zinc-700 flex-1 truncate">{{ name }}</span>
+                </label>
+                <div v-if="filteredEventNames.length === 0" class="px-2 py-2 text-sm text-zinc-500">
+                  Aucun événement
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="flex flex-col gap-2">
