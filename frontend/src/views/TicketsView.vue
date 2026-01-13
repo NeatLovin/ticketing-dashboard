@@ -490,6 +490,9 @@ function selectEventName(name) {
 }
 
 watch(uniqueEventNames, (names) => {
+  // Au démarrage, `tickets` est vide → `uniqueEventNames` vide.
+  // Ne pas "nettoyer" le filtre venant de l'URL à ce moment-là.
+  if (!Array.isArray(names) || names.length === 0) return;
   const allowed = new Set(names);
   if (!Array.isArray(filters.value.eventName) || filters.value.eventName.length === 0) return;
   const next = filters.value.eventName.filter(e => allowed.has(e));
