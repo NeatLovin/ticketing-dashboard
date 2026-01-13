@@ -28,6 +28,7 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <button type="button" class="btn" @click="goToday">Aujourd'hui</button>
           <button type="button" class="btn" @click="goPrevMonth">←</button>
 
           <label class="sr-only" for="agenda-month">Mois</label>
@@ -43,21 +44,42 @@
         </div>
       </div>
 
-      <div v-if="calendarItems.length === 0" class="panel p-4">
-        <div class="text-sm text-zinc-700 font-semibold">Aucune session sur la période</div>
-        <div class="mt-1 text-sm text-zinc-500">Le calendrier reste affiché (mois navigable).</div>
-      </div>
-
       <div class="grid grid-cols-7 gap-2">
+        <div
+          v-for="label in weekdayLabels"
+          :key="label"
+          class="px-2 py-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-300"
+        >
+          {{ label }}
+        </div>
+
         <div
           v-for="(cell, idx) in monthGrid"
           :key="idx"
           class="panel p-2 min-h-[120px]"
+          :class="{ 'ring-2 ring-indigo-500 bg-indigo-50/50': cell && cell.dateKey === todayKey }"
         >
           <div v-if="!cell" class="h-full" />
           <div v-else>
             <div class="flex items-baseline justify-between">
               <div class="text-xs font-semibold text-zinc-700">{{ cell.day }}</div>
+
+              <div
+                class="text-[10px] font-semibold whitespace-nowrap"
+                :class="dayTicketsCount(cell.dateKey) > 0 ? 'text-green-700' : 'text-red-600'"
+                :title="`Billets vendus: ${dayTicketsCount(cell.dateKey)}`"
+                aria-label="Billets vendus (jour)"
+              >
+                <template v-if="dayTicketsCount(cell.dateKey) > 0">
+                  <span aria-hidden="true">↑</span>
+                  <span class="ml-1">{{ dayTicketsCount(cell.dateKey) }}</span>
+                </template>
+                <template v-else>
+                  <span class="ml-1" aria-hidden="true">- </span>
+                  <span>0</span>
+                </template>
+              </div>
+
               <div class="text-[10px] text-zinc-400">{{ cell.weekdayShort }}</div>
             </div>
 
@@ -92,9 +114,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import SkeletonBlock from "../components/SkeletonBlock.vue";
 
@@ -106,6 +134,8 @@ const error = ref(null);
 const today = new Date();
 const selectedMonth = ref(new Date(today.getFullYear(), today.getMonth(), 1));
 
+const weekdayLabels = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+
 const monthStart = computed(() => new Date(selectedMonth.value.getFullYear(), selectedMonth.value.getMonth(), 1));
 const monthEnd = computed(() => new Date(selectedMonth.value.getFullYear(), selectedMonth.value.getMonth() + 1, 0));
 
@@ -116,6 +146,8 @@ function pad2(n) {
 function dateKeyFromDate(d) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
+
+const todayKey = computed(() => dateKeyFromDate(new Date()));
 
 function normalizeDateKey(dateStr) {
   if (typeof dateStr !== "string") return null;
@@ -210,6 +242,9 @@ const monthGrid = computed(() => {
 
 const allSessionItems = ref([]);
 
+const dailySalesCounts = ref({});
+const dailySalesLoading = ref(false);
+
 const itemsByDate = computed(() => {
   const startKey = dateKeyFromDate(monthStart.value);
   const endKey = dateKeyFromDate(monthEnd.value);
@@ -237,6 +272,90 @@ const itemsByDate = computed(() => {
 });
 
 const calendarItems = computed(() => Object.values(itemsByDate.value).flat());
+
+function dayTicketsCount(dateKey) {
+  if (dailySalesLoading.value) return 0;
+  return dailySalesCounts.value[dateKey] || 0;
+}
+
+async function loadDailySalesCounts() {
+  dailySalesLoading.value = true;
+
+  try {
+    if (!db) throw new Error("Firebase non initialisé (db indisponible).");
+
+    const toDateFromAny = (value) => {
+      if (!value) return null;
+      if (value instanceof Date) return value;
+      if (typeof value === "number" && Number.isFinite(value)) return new Date(value);
+      if (typeof value === "string") {
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+      if (typeof value === "object" && typeof value.toDate === "function") {
+        const d = value.toDate();
+        return d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
+      }
+      return null;
+    };
+
+    // Comptage des ventes par jour = nombre de docs tickets dont createdAt tombe dans le mois.
+    const start = new Date(
+      selectedMonth.value.getFullYear(),
+      selectedMonth.value.getMonth(),
+      1,
+      0,
+      0,
+      0,
+      0
+    );
+    const end = new Date(
+      selectedMonth.value.getFullYear(),
+      selectedMonth.value.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999
+    );
+
+    // Ventes du jour = date Petzi (generatedAt). On borne par mois via préfixe YYYY-MM.
+    const ticketsRef = collection(db, "tickets");
+    const y = selectedMonth.value.getFullYear();
+    const m = selectedMonth.value.getMonth() + 1;
+    const startBound = `${y}-${pad2(m)}-01`;
+    const nextY = m === 12 ? y + 1 : y;
+    const nextM = m === 12 ? 1 : m + 1;
+    const endBound = `${nextY}-${pad2(nextM)}-01`;
+
+    const q = query(
+      ticketsRef,
+      where("generatedAt", ">=", startBound),
+      where("generatedAt", "<", endBound),
+      orderBy("generatedAt", "asc")
+    );
+
+    const snap = await getDocs(q);
+
+    const counts = {};
+
+    snap.forEach((docSnap) => {
+      const data = docSnap.data() || {};
+      const d = toDateFromAny(data.generatedAt);
+      if (!d) return;
+      const key = dateKeyFromDate(d);
+      counts[key] = (counts[key] || 0) + 1;
+    });
+
+    dailySalesCounts.value = counts;
+  } catch (e) {
+    console.error(e);
+    // Non bloquant: on garde juste l'indicateur à 0.
+    dailySalesCounts.value = {};
+  } finally {
+    dailySalesLoading.value = false;
+  }
+}
 
 function goToEvent(eventId) {
   if (!eventId) return;
@@ -358,7 +477,17 @@ function onMonthInputChange(e) {
   selectedMonth.value = new Date(y, m - 1, 1);
 }
 
+function goToday() {
+  const now = new Date();
+  selectedMonth.value = new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
 onMounted(() => {
   loadAgenda();
+  loadDailySalesCounts();
+});
+
+watch(selectedMonth, () => {
+  loadDailySalesCounts();
 });
 </script>

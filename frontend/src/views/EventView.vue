@@ -1,7 +1,22 @@
 <template>
   <main class="page">
     <div class="page-header">
-      <h1 class="page-title">Événement</h1>
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-200 hover:text-white hover:bg-white/10 transition"
+          @click="goBackToAgenda"
+        >
+          <span aria-hidden="true">←</span>
+          <span>Retour à l'agenda</span>
+        </button>
+
+        <div v-if="eventNameDisplay" class="text-sm text-zinc-300 truncate max-w-[min(60ch,70vw)]" :title="eventNameDisplay">
+          {{ eventNameDisplay }}
+        </div>
+      </div>
+
+      <h1 class="page-title">{{ eventNameDisplay || "Événement" }}</h1>
       <p class="page-subtitle">Tickets pour l'événement {{ eventIdLabel }}</p>
     </div>
 
@@ -18,11 +33,18 @@
     <div v-else-if="error" class="panel p-6">
       <div class="text-sm text-red-600 font-semibold">Erreur</div>
       <div class="mt-2 text-sm text-zinc-600 break-words">{{ error }}</div>
+      <div class="mt-4 flex items-center gap-2">
+        <button type="button" class="btn" @click="goBackToAgenda">Retour à l'agenda</button>
+      </div>
     </div>
 
     <div v-else-if="tickets.length === 0" class="panel p-6">
       <div class="text-sm text-zinc-700 font-semibold">Aucun ticket</div>
       <div class="mt-1 text-sm text-zinc-500">Pas de vente trouvée pour cet événement.</div>
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <button type="button" class="btn" @click="goBackToAgenda">Retour à l'agenda</button>
+        <button type="button" class="btn" @click="goToTickets">Ouvrir Tickets</button>
+      </div>
     </div>
 
     <div v-else class="panel overflow-hidden">
@@ -84,6 +106,14 @@ let unsubscribe = null;
 const eventId = computed(() => route.params.eventId);
 const eventIdLabel = computed(() => (eventId.value ? String(eventId.value) : "—"));
 
+const eventNameDisplay = computed(() => {
+  const fromEvents = typeof eventNameFromEvents.value === "string" ? eventNameFromEvents.value.trim() : "";
+  if (fromEvents) return fromEvents;
+  const sample = tickets.value[0];
+  const fromTicket = typeof sample?.eventName === "string" ? sample.eventName.trim() : "";
+  return fromTicket || "";
+});
+
 function formatTime(hms) {
   if (typeof hms !== "string") return "";
   const parts = hms.split(":");
@@ -127,6 +157,11 @@ function goToTickets() {
   } else {
     router.push({ path: "/tickets" });
   }
+}
+
+function goBackToAgenda() {
+  // Retour simple et prévisible (évite un back() qui peut repartir ailleurs)
+  router.push({ path: "/agenda" });
 }
 
 async function loadEventNameFromEvents(eventIdValue) {
