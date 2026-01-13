@@ -1,11 +1,11 @@
 <template>
-  <div class="panel p-6">
-    <h2 class="text-xl font-bold mb-4">Localisation géographique des clients</h2>
+  <div class="panel p-5">
+    <h2 class="section-heading mb-4">Localisation géographique des clients</h2>
     
     <div>
-      <div ref="mapContainer" id="map" class="w-full" style="height: 500px"></div>
-      <div class="mt-4 text-sm text-zinc-600">
-        <p>Total de clients localisés : {{ localizedTickets.length }}</p>
+      <div ref="mapContainer" id="map" class="w-full rounded-xl overflow-hidden" style="height: 500px"></div>
+      <div class="mt-3 text-sm text-zinc-500">
+        <p>Total de clients localisés : <span class="font-semibold text-zinc-700">{{ localizedTickets.length }}</span></p>
       </div>
     </div>
   </div>

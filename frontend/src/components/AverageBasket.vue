@@ -1,10 +1,10 @@
 <template>
-  <div class="panel p-6">
-    <h2 class="text-xl font-bold mb-4">Panier moyen</h2>
+  <div class="panel p-5">
+    <h2 class="section-heading mb-4">Panier moyen</h2>
     
     <div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-blue-50 p-4 rounded-lg">
+        <div class="bg-blue-50 p-4 rounded-xl">
           <div class="text-sm text-zinc-600 mb-1">Panier moyen</div>
           <div class="text-3xl font-bold text-blue-600">
             {{ averageBasket.toFixed(2) }}
@@ -12,7 +12,7 @@
           <div class="text-xs text-zinc-500 mt-1">tickets par transaction</div>
         </div>
         
-        <div class="bg-green-50 p-4 rounded-lg">
+        <div class="bg-green-50 p-4 rounded-xl">
           <div class="text-sm text-zinc-600 mb-1">Total transactions</div>
           <div class="text-3xl font-bold text-green-600">
             {{ totalTransactions }}
@@ -20,7 +20,7 @@
           <div class="text-xs text-zinc-500 mt-1">transactions</div>
         </div>
         
-        <div class="bg-purple-50 p-4 rounded-lg">
+        <div class="bg-purple-50 p-4 rounded-xl">
           <div class="text-sm text-zinc-600 mb-1">Total tickets</div>
           <div class="text-3xl font-bold text-purple-600">
             {{ props.tickets.length }}
@@ -30,7 +30,7 @@
       </div>
 
       <div class="mt-6">
-        <h3 class="text-lg font-semibold mb-3">Répartition des transactions</h3>
+        <h3 class="text-base font-semibold text-zinc-900 mb-3">Répartition des transactions</h3>
         <div class="relative" style="height: 300px">
           <Bar :data="chartData" :options="chartOptions" />
         </div>

@@ -1,6 +1,6 @@
 <template>
-  <div class="panel p-6">
-    <h2 class="text-xl font-bold mb-4">Répartition des ventes par événement</h2>
+  <div class="panel p-5">
+    <h2 class="section-heading mb-4">Répartition des ventes par événement</h2>
     
     <div v-if="hasData" class="flex flex-col md:flex-row h-[350px]">
       <!-- Chart -->
@@ -9,7 +9,7 @@
       </div>
       
       <!-- Custom Legend -->
-      <div class="w-full md:w-64 overflow-y-auto pl-4 border-l border-gray-100 mt-4 md:mt-0 custom-scrollbar">
+      <div class="w-full md:w-64 overflow-y-auto pl-4 border-l border-zinc-100 mt-4 md:mt-0 custom-scrollbar">
         <ul class="space-y-2 text-sm">
           <li v-for="(label, index) in chartData.labels" :key="index" class="flex items-start">
             <span 
@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    <div v-else class="h-[350px] flex items-center justify-center text-zinc-500">
+    <div v-else class="h-[350px] flex items-center justify-center text-zinc-400">
       Aucune donnée à afficher
     </div>
   </div>

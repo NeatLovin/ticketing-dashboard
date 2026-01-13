@@ -52,13 +52,13 @@
         <!-- KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <!-- Total Revenue -->
-          <div class="panel p-6">
+          <div class="kpi-card">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Chiffre d'affaires</p>
-                <p class="text-2xl font-bold text-zinc-900">{{ formatCurrency(totalRevenue) }}</p>
+                <p class="kpi-label">Chiffre d'affaires</p>
+                <p class="kpi-value">{{ formatCurrency(totalRevenue) }}</p>
               </div>
-              <div class="p-3 bg-green-100 rounded-full">
+              <div class="kpi-icon bg-green-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -67,13 +67,13 @@
           </div>
 
           <!-- Total Tickets -->
-          <div class="panel p-6">
+          <div class="kpi-card">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Billets vendus</p>
-                <p class="text-2xl font-bold text-zinc-900">{{ totalTickets }}</p>
+                <p class="kpi-label">Billets vendus</p>
+                <p class="kpi-value">{{ totalTickets }}</p>
               </div>
-              <div class="p-3 bg-blue-100 rounded-full">
+              <div class="kpi-icon bg-blue-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
                 </svg>
@@ -82,13 +82,13 @@
           </div>
 
           <!-- Total Events -->
-          <div class="panel p-6">
+          <div class="kpi-card">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Événements</p>
-                <p class="text-2xl font-bold text-zinc-900">{{ totalEvents }}</p>
+                <p class="kpi-label">Événements</p>
+                <p class="kpi-value">{{ totalEvents }}</p>
               </div>
-              <div class="p-3 bg-purple-100 rounded-full">
+              <div class="kpi-icon bg-purple-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -97,14 +97,14 @@
           </div>
 
           <!-- Avg Ticket Price -->
-          <div class="panel p-6">
+          <div class="kpi-card">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Prix moyen billet</p>
-                <p class="text-2xl font-bold text-zinc-900">{{ formatCurrency(averageTicketPrice) }}</p>
+                <p class="kpi-label">Prix moyen billet</p>
+                <p class="kpi-value">{{ formatCurrency(averageTicketPrice) }}</p>
               </div>
-              <div class="p-3 bg-orange-100 rounded-full">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class="kpi-icon bg-amber-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -112,13 +112,13 @@
           </div>
 
           <!-- Peak Sales Time -->
-          <div class="panel p-6">
+          <div class="kpi-card">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Pic de ventes</p>
-                <p class="text-2xl font-bold text-zinc-900">{{ peakSalesTime }}</p>
+                <p class="kpi-label">Pic de ventes</p>
+                <p class="kpi-value">{{ peakSalesTime }}</p>
               </div>
-              <div class="p-3 bg-pink-100 rounded-full">
+              <div class="kpi-icon bg-pink-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -127,13 +127,13 @@
           </div>
 
           <!-- Avg Lead Time -->
-          <div class="panel p-6">
+          <div class="kpi-card">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Délai moyen d'achat</p>
-                <p class="text-2xl font-bold text-zinc-900">{{ avgLeadTime }} jours</p>
+                <p class="kpi-label">Délai moyen d'achat</p>
+                <p class="kpi-value">{{ avgLeadTime }} jours</p>
               </div>
-              <div class="p-3 bg-teal-100 rounded-full">
+              <div class="kpi-icon bg-teal-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -142,13 +142,13 @@
           </div>
 
           <!-- Presale Percentage -->
-          <div class="panel p-6">
+          <div class="kpi-card">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Prélocations</p>
-                <p class="text-2xl font-bold text-zinc-900">{{ presalePercentage }}%</p>
+                <p class="kpi-label">Prélocations</p>
+                <p class="kpi-value">{{ presalePercentage }}%</p>
               </div>
-              <div class="p-3 bg-indigo-100 rounded-full">
+              <div class="kpi-icon bg-indigo-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
@@ -158,9 +158,9 @@
           </div>
 
           <!-- Top Locations -->
-          <div class="panel p-6">
-            <div class="flex items-center justify-between mb-2">
-              <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Top Localités</p>
+          <div class="kpi-card">
+            <div class="flex items-center justify-between mb-3">
+              <p class="kpi-label">Top Localités</p>
               <div class="p-2 bg-yellow-100 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -168,12 +168,12 @@
                 </svg>
               </div>
             </div>
-            <ul class="space-y-1">
+            <ul class="space-y-1.5">
               <li v-for="loc in topLocations" :key="loc.zip" class="flex justify-between text-sm">
                 <span class="text-zinc-600 font-medium">{{ loc.zip }}</span>
                 <span class="text-zinc-900 font-bold">{{ loc.count }}</span>
               </li>
-              <li v-if="topLocations.length === 0" class="text-sm text-zinc-500">N/A</li>
+              <li v-if="topLocations.length === 0" class="text-sm text-zinc-400">N/A</li>
             </ul>
           </div>
         </div>
@@ -181,30 +181,30 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Top Events -->
           <div class="panel overflow-hidden">
-            <div class="p-6 border-b border-gray-100">
-              <h2 class="text-xl font-bold text-zinc-900">Top Événements (Chiffre d'affaires)</h2>
+            <div class="p-5 border-b border-zinc-100">
+              <h2 class="section-heading">Top Événements (Chiffre d'affaires)</h2>
             </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm text-zinc-600">
-                <thead class="bg-zinc-50 text-zinc-700 uppercase font-semibold">
+            <div class="table-container">
+              <table class="table">
+                <thead>
                   <tr>
-                    <th class="px-6 py-3">Événement</th>
-                    <th class="px-6 py-3 text-right">Billets</th>
-                    <th class="px-6 py-3 text-right">CA</th>
+                    <th class="px-5 py-3">Événement</th>
+                    <th class="px-5 py-3 text-right">Billets</th>
+                    <th class="px-5 py-3 text-right">CA</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
-                  <tr v-for="event in topEvents" :key="event.name" class="hover:bg-gray-50 transition h-20">
-                    <td class="px-6 py-4 font-medium text-zinc-900 truncate max-w-xs" :title="event.name">
+                <tbody>
+                  <tr v-for="event in topEvents" :key="event.name">
+                    <td class="px-5 py-4 font-medium text-zinc-900 truncate max-w-xs" :title="event.name">
                       {{ event.name }}
                     </td>
-                    <td class="px-6 py-4 text-right">{{ event.count }}</td>
-                    <td class="px-6 py-4 text-right font-semibold text-green-600">
+                    <td class="px-5 py-4 text-right">{{ event.count }}</td>
+                    <td class="px-5 py-4 text-right font-semibold text-green-600">
                       {{ formatCurrency(event.revenue) }}
                     </td>
                   </tr>
                   <tr v-if="topEvents.length === 0">
-                    <td colspan="3" class="px-6 py-4 text-center text-zinc-500">Aucun événement</td>
+                    <td colspan="3" class="px-5 py-6 text-center text-zinc-400">Aucun événement</td>
                   </tr>
                 </tbody>
               </table>
@@ -213,39 +213,39 @@
 
           <!-- Recent Sales -->
           <div class="panel overflow-hidden">
-            <div class="p-6 border-b border-gray-100">
-              <h2 class="text-xl font-bold text-zinc-900">Dernières ventes</h2>
+            <div class="p-5 border-b border-zinc-100">
+              <h2 class="section-heading">Dernières ventes</h2>
             </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm text-gray-600">
-                <thead class="bg-gray-50 text-gray-700 uppercase font-semibold">
+            <div class="table-container">
+              <table class="table">
+                <thead>
                   <tr>
-                    <th class="px-6 py-3">Acheteur</th>
-                    <th class="px-6 py-3">Événement</th>
-                    <th class="px-6 py-3 text-right">Montant</th>
-                    <th class="px-6 py-3 text-right">Date</th>
+                    <th class="px-5 py-3">Acheteur</th>
+                    <th class="px-5 py-3">Événement</th>
+                    <th class="px-5 py-3 text-right">Montant</th>
+                    <th class="px-5 py-3 text-right">Date</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
-                  <tr v-for="ticket in recentTickets" :key="ticket.id" class="hover:bg-gray-50 transition h-20">
-                    <td class="px-6 py-4">
-                      <div class="font-medium text-gray-900">
+                <tbody>
+                  <tr v-for="ticket in recentTickets" :key="ticket.id">
+                    <td class="px-5 py-4">
+                      <div class="font-medium text-zinc-900">
                         {{ ticket.buyerFirstName }} {{ ticket.buyerLastName }}
                       </div>
-                      <div class="text-xs text-gray-500">{{ ticket.category }}</div>
+                      <div class="text-xs text-zinc-500">{{ ticket.category }}</div>
                     </td>
-                    <td class="px-6 py-4 truncate max-w-xs" :title="ticket.eventName">
+                    <td class="px-5 py-4 truncate max-w-xs" :title="ticket.eventName">
                       {{ ticket.eventName }}
                     </td>
-                    <td class="px-6 py-4 text-right font-semibold">
+                    <td class="px-5 py-4 text-right font-semibold text-zinc-900">
                       {{ formatCurrency(ticket.priceAmount) }}
                     </td>
-                    <td class="px-6 py-4 text-right text-xs text-gray-500">
+                    <td class="px-5 py-4 text-right text-xs text-zinc-500">
                       {{ formatDate(ticket.createdAt) }}
                     </td>
                   </tr>
                   <tr v-if="recentTickets.length === 0">
-                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">Aucune vente récente</td>
+                    <td colspan="4" class="px-5 py-6 text-center text-zinc-400">Aucune vente récente</td>
                   </tr>
                 </tbody>
               </table>

@@ -920,13 +920,13 @@ onUnmounted(() => {
 
     <!-- KPI Cards -->
     <div v-if="!loading && tickets.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="panel p-4">
+      <div class="kpi-card">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Total tickets</p>
-            <p class="text-2xl font-bold text-zinc-900">{{ sortedTickets.length }}</p>
+            <p class="kpi-label">Total tickets</p>
+            <p class="kpi-value">{{ sortedTickets.length }}</p>
           </div>
-          <div class="p-3 bg-blue-100 rounded-full">
+          <div class="kpi-icon bg-blue-100">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
             </svg>
@@ -934,13 +934,13 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="panel p-4">
+      <div class="kpi-card">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Événements</p>
-            <p class="text-2xl font-bold text-zinc-900">{{ uniqueEvents }}</p>
+            <p class="kpi-label">Événements</p>
+            <p class="kpi-value">{{ uniqueEvents }}</p>
           </div>
-          <div class="p-3 bg-purple-100 rounded-full">
+          <div class="kpi-icon bg-purple-100">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -948,13 +948,13 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="panel p-4">
+      <div class="kpi-card">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Catégories</p>
-            <p class="text-2xl font-bold text-zinc-900">{{ uniqueCategories.length }}</p>
+            <p class="kpi-label">Catégories</p>
+            <p class="kpi-value">{{ uniqueCategories.length }}</p>
           </div>
-          <div class="p-3 bg-green-100 rounded-full">
+          <div class="kpi-icon bg-green-100">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
             </svg>
@@ -962,13 +962,13 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="panel p-4">
+      <div class="kpi-card">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-xs text-zinc-500 uppercase font-semibold tracking-wide">Revenu total</p>
-            <p class="text-2xl font-bold text-zinc-900">{{ formatPrice(totalRevenue, 'CHF') }}</p>
+            <p class="kpi-label">Revenu total</p>
+            <p class="kpi-value">{{ formatPrice(totalRevenue, 'CHF') }}</p>
           </div>
-          <div class="p-3 bg-emerald-100 rounded-full">
+          <div class="kpi-icon bg-emerald-100">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -978,25 +978,25 @@ onUnmounted(() => {
     </div>
 
     <!-- Filters Panel -->
-    <div v-if="!loading && tickets.length > 0" class="panel p-6 mb-6">
+    <div v-if="!loading && tickets.length > 0" class="filter-panel mb-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-bold text-zinc-900">Filtres</h2>
+        <h2 class="section-heading">Filtres</h2>
         <button
           @click="resetAllFilters"
-          class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          class="btn-ghost text-sm"
         >
           Réinitialiser
         </button>
       </div>
 
       <!-- Sauvegardes de filtres -->
-      <div class="mb-6 pb-6 border-b border-gray-200">
+      <div class="mb-6 pb-6 border-b border-zinc-200">
         <h3 class="text-sm font-semibold text-zinc-700 mb-3">Sauvegardes de filtres</h3>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div class="flex flex-col gap-2">
-            <label class="text-xs text-zinc-600 font-medium">Charger une sauvegarde</label>
+            <label class="filter-label">Charger une sauvegarde</label>
             <div class="flex items-center gap-2">
-              <select v-model="selectedPresetId" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <select v-model="selectedPresetId" class="input flex-1">
                 <option value="">— Choisir une sauvegarde —</option>
                 <option v-for="p in savedFilterPresets" :key="p.id" :value="p.id">
                   {{ p.name }}
@@ -1005,14 +1005,14 @@ onUnmounted(() => {
               <button
                 @click="loadSelectedPreset"
                 :disabled="!selectedPresetId"
-                class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+                class="btn"
               >
                 Charger
               </button>
               <button
                 @click="deleteSelectedPreset"
                 :disabled="!selectedPresetId"
-                class="px-4 py-2 border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                class="btn-secondary text-red-600 border-red-200 hover:bg-red-50"
               >
                 Supprimer
               </button>
@@ -1020,18 +1020,18 @@ onUnmounted(() => {
           </div>
 
           <div class="flex flex-col gap-2">
-            <label class="text-xs text-zinc-600 font-medium">Nouvelle sauvegarde</label>
+            <label class="filter-label">Nouvelle sauvegarde</label>
             <div class="flex items-center gap-2">
               <input
                 v-model="presetName"
                 type="text"
                 placeholder="Nom de la sauvegarde..."
-                class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                class="input flex-1"
                 @keydown.enter.prevent="saveCurrentFilters"
               />
               <button
                 @click="saveCurrentFilters"
-                class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition"
+                class="btn bg-green-600 hover:bg-green-700"
               >
                 Sauvegarder
               </button>
@@ -1047,44 +1047,45 @@ onUnmounted(() => {
       <!-- Search Filters -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <div class="flex flex-col gap-2">
-          <label class="text-xs text-zinc-600 font-medium">Date début</label>
+          <label class="filter-label">Date début</label>
           <input 
             v-model="filters.dateStart" 
             type="date" 
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="input"
           />
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="text-xs text-zinc-600 font-medium">Date fin</label>
+          <label class="filter-label">Date fin</label>
           <input 
             v-model="filters.dateEnd" 
             type="date" 
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="input"
           />
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="text-xs text-zinc-600 font-medium">N° de ticket</label>
+          <label class="filter-label">N° de ticket</label>
           <input 
             v-model="filters.ticketNumber" 
             type="text" 
             placeholder="Rechercher..."
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="input"
           />
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="text-xs text-zinc-600 font-medium">Événement</label>
+          <label class="filter-label">Événement</label>
           <div class="relative">
             <button
               @click.stop="showEventDropdown = !showEventDropdown"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white flex justify-between items-center"
+              class="select-trigger"
+              :class="{ 'ring-2 ring-zinc-900/10 border-zinc-400': showEventDropdown }"
             >
               <span class="truncate text-zinc-700">
                 {{ (filters.eventName?.length ?? 0) ? `${filters.eventName.length} sélect.` : 'Tous' }}
               </span>
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 text-zinc-400 shrink-0" :class="{ 'rotate-180': showEventDropdown }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
@@ -1095,78 +1096,89 @@ onUnmounted(() => {
               class="fixed inset-0 z-40"
             ></div>
 
-            <div
-              v-if="showEventDropdown"
-              @click.stop
-              class="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto"
+            <transition
+              enter-active-class="transition ease-out duration-100"
+              enter-from-class="opacity-0 scale-95"
+              enter-to-class="opacity-100 scale-100"
+              leave-active-class="transition ease-in duration-75"
+              leave-from-class="opacity-100 scale-100"
+              leave-to-class="opacity-0 scale-95"
             >
-              <div class="p-2 border-b border-gray-100 sticky top-0 bg-white z-10 space-y-2">
-                <input
-                  v-model="eventSearchQuery"
-                  type="text"
-                  placeholder="Rechercher un événement..."
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  @click.stop
-                />
-                <button
-                  @click="filters.eventName = []"
-                  class="text-xs text-blue-600 hover:underline font-medium"
-                >
-                  Tous les événements
-                </button>
-              </div>
-
-              <div class="p-2 space-y-1">
-                <button
-                  type="button"
-                  @click="toggleAllFilteredEvents"
-                  class="w-full text-left px-2 py-1.5 hover:bg-gray-50 rounded text-xs font-medium text-blue-700"
-                >
-                  {{ areAllFilteredEventsSelected ? 'Tout désélectionner' : 'Tout sélectionner' }}
-                </button>
-
-                <label
-                  v-for="name in filteredEventNames"
-                  :key="name"
-                  class="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer"
-                >
+              <div
+                v-if="showEventDropdown"
+                @click.stop
+                class="dropdown-menu custom-scrollbar z-50"
+              >
+                <div class="p-2 border-b border-zinc-100 sticky top-0 bg-white z-10 space-y-2">
                   <input
-                    type="checkbox"
-                    :checked="filters.eventName.includes(name)"
-                    class="rounded text-blue-600 focus:ring-blue-500"
-                    @change.stop="toggleEventName(name)"
+                    v-model="eventSearchQuery"
+                    type="text"
+                    placeholder="Rechercher un événement..."
+                    class="input"
+                    @click.stop
                   />
-                  <span class="text-sm text-zinc-700 flex-1 truncate">{{ name }}</span>
-                </label>
-                <div v-if="filteredEventNames.length === 0" class="px-2 py-2 text-sm text-zinc-500">
-                  Aucun événement
+                  <button
+                    @click="filters.eventName = []"
+                    class="text-xs text-zinc-600 hover:text-zinc-900 font-medium"
+                  >
+                    Tous les événements
+                  </button>
+                </div>
+
+                <div class="p-2 space-y-1">
+                  <button
+                    type="button"
+                    @click="toggleAllFilteredEvents"
+                    class="dropdown-item font-medium text-zinc-900"
+                  >
+                    {{ areAllFilteredEventsSelected ? 'Tout désélectionner' : 'Tout sélectionner' }}
+                  </button>
+
+                  <label
+                    v-for="name in filteredEventNames"
+                    :key="name"
+                    class="dropdown-item cursor-pointer"
+                    :class="{ 'dropdown-item-active': filters.eventName.includes(name) }"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="filters.eventName.includes(name)"
+                      class="checkbox"
+                      @change.stop="toggleEventName(name)"
+                    />
+                    <span class="text-sm text-zinc-700 flex-1 truncate">{{ name }}</span>
+                  </label>
+                  <div v-if="filteredEventNames.length === 0" class="px-2 py-3 text-sm text-zinc-400 text-center">
+                    Aucun événement
+                  </div>
                 </div>
               </div>
-            </div>
+            </transition>
           </div>
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="text-xs text-zinc-600 font-medium">Acheteur</label>
+          <label class="filter-label">Acheteur</label>
           <input 
             v-model="filters.buyer" 
             type="text" 
             placeholder="Nom, email..."
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="input"
           />
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="text-xs text-zinc-600 font-medium">Catégories ({{ filters.ticketCategory.length }})</label>
+          <label class="filter-label">Catégories ({{ filters.ticketCategory.length }})</label>
           <div class="relative">
             <button 
               @click.stop="showCategoryDropdown = !showCategoryDropdown"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white flex justify-between items-center"
+              class="select-trigger"
+              :class="{ 'ring-2 ring-zinc-900/10 border-zinc-400': showCategoryDropdown }"
             >
               <span class="truncate text-zinc-700">
                 {{ filters.ticketCategory.length ? `${filters.ticketCategory.length} sélect.` : 'Tous' }}
               </span>
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 text-zinc-400 shrink-0" :class="{ 'rotate-180': showCategoryDropdown }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
@@ -1177,65 +1189,74 @@ onUnmounted(() => {
               class="fixed inset-0 z-40"
             ></div>
 
-            <div 
-              v-if="showCategoryDropdown" 
-              @click.stop 
-              class="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto"
+            <transition
+              enter-active-class="transition ease-out duration-100"
+              enter-from-class="opacity-0 scale-95"
+              enter-to-class="opacity-100 scale-100"
+              leave-active-class="transition ease-in duration-75"
+              leave-from-class="opacity-100 scale-100"
+              leave-to-class="opacity-0 scale-95"
             >
-              <div class="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
-                <button @click="filters.ticketCategory = []" class="text-xs text-blue-600 hover:underline font-medium">Tout décocher</button>
+              <div 
+                v-if="showCategoryDropdown" 
+                @click.stop 
+                class="dropdown-menu custom-scrollbar z-50"
+              >
+                <div class="p-2 border-b border-zinc-100 sticky top-0 bg-white z-10">
+                  <button @click="filters.ticketCategory = []" class="text-xs text-zinc-600 hover:text-zinc-900 font-medium">Tout décocher</button>
+                </div>
+                <div class="p-2 space-y-1">
+                  <label v-for="cat in uniqueCategories" :key="cat" class="dropdown-item cursor-pointer" :class="{ 'dropdown-item-active': filters.ticketCategory.includes(cat) }">
+                    <input 
+                      type="checkbox" 
+                      :value="cat" 
+                      v-model="filters.ticketCategory"
+                      class="checkbox"
+                    >
+                    <span class="text-sm text-zinc-700 flex-1 truncate">{{ cat }}</span>
+                  </label>
+                </div>
               </div>
-              <div class="p-2 space-y-1">
-                <label v-for="cat in uniqueCategories" :key="cat" class="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    :value="cat" 
-                    v-model="filters.ticketCategory"
-                    class="rounded text-blue-600 focus:ring-blue-500"
-                  >
-                  <span class="text-sm text-zinc-700 flex-1 truncate">{{ cat }}</span>
-                </label>
-              </div>
-            </div>
+            </transition>
           </div>
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="text-xs text-zinc-600 font-medium">Prix min</label>
+          <label class="filter-label">Prix min</label>
           <input 
             type="number" 
             v-model.number="filters.priceMin" 
             :min="priceRange.min" 
             :max="priceRange.max"
             @input="updatePriceMin"
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="input"
           />
         </div>
 
         <div class="flex flex-col gap-2">
-          <label class="text-xs text-zinc-600 font-medium">Prix max</label>
+          <label class="filter-label">Prix max</label>
           <input 
             type="number" 
             v-model.number="filters.priceMax" 
             :min="priceRange.min" 
             :max="priceRange.max"
             @input="updatePriceMax"
-            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="input"
           />
         </div>
       </div>
     </div>
 
     <!-- Data Panel -->
-    <div class="panel p-6">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-bold text-zinc-900">Liste des tickets</h2>
+    <div class="panel p-5">
+      <div class="flex justify-between items-center mb-5">
+        <h2 class="section-heading">Liste des tickets</h2>
 
         <div v-if="!loading && tickets.length > 0" class="flex items-center gap-3">
           <button
             @click="exportFilteredTicketsCsv"
             :disabled="sortedTickets.length === 0"
-            class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            class="btn bg-green-600 hover:bg-green-700"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1244,7 +1265,7 @@ onUnmounted(() => {
           </button>
 
           <div class="flex items-center gap-2 text-sm">
-            <select v-model.number="itemsPerPage" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select v-model.number="itemsPerPage" class="input w-auto py-1.5">
               <option :value="10">10</option>
               <option :value="25">25</option>
               <option :value="50">50</option>
@@ -1257,7 +1278,7 @@ onUnmounted(() => {
             <button 
               @click="currentPage--" 
               :disabled="currentPage === 1"
-              class="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition"
+              class="btn-secondary py-1.5"
             >
               ← Préc.
             </button>
@@ -1265,7 +1286,7 @@ onUnmounted(() => {
             <button 
               @click="currentPage++" 
               :disabled="currentPage >= totalPages"
-              class="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition"
+              class="btn-secondary py-1.5"
             >
               Suiv. →
             </button>
@@ -1280,16 +1301,16 @@ onUnmounted(() => {
           <SkeletonBlock class-name="h-4 w-24" />
         </div>
 
-        <div class="border rounded overflow-hidden">
-          <div class="bg-gray-100 px-2 py-2 flex gap-2">
+        <div class="border border-zinc-200 rounded-xl overflow-hidden">
+          <div class="bg-zinc-50 px-4 py-3 flex gap-4">
             <SkeletonBlock class-name="h-4 w-32" />
             <SkeletonBlock class-name="h-4 w-20" />
             <SkeletonBlock class-name="h-4 w-44" />
             <SkeletonBlock class-name="h-4 w-40" />
             <SkeletonBlock class-name="h-4 w-24" />
           </div>
-          <div class="divide-y">
-            <div v-for="i in 10" :key="i" class="px-2 py-3 flex gap-2 items-center">
+          <div class="divide-y divide-zinc-100">
+            <div v-for="i in 10" :key="i" class="px-4 py-3 flex gap-4 items-center">
               <SkeletonBlock class-name="h-4 w-32" />
               <SkeletonBlock class-name="h-4 w-20" />
               <SkeletonBlock class-name="h-4 w-44" />
@@ -1301,108 +1322,105 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div v-else-if="error" class="mt-4 text-red-600">Erreur : {{ error }}</div>
+    <div v-else-if="error" class="mt-4 p-4 bg-red-50 rounded-xl text-red-600 text-sm">Erreur : {{ error }}</div>
 
-    <div v-else class="overflow-x-auto rounded-lg border border-gray-200">
-    <table class="w-full text-sm">
+    <div v-else class="table-container border border-zinc-200">
+    <table class="table">
       <thead>
-        <tr class="bg-zinc-50 border-b border-gray-200">
-          <th @click="handleSort('date')" class="px-4 py-3 text-left cursor-pointer hover:bg-zinc-100 select-none align-top transition border-r border-gray-200 last:border-r-0">
+        <tr>
+          <th @click="handleSort('date')" class="cursor-pointer hover:bg-zinc-100 select-none transition">
             <div class="flex flex-col gap-1">
               <div class="flex justify-between items-center">
                 <span>Date d'achat</span>
-                <span v-if="sortColumn === 'date'">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                <span v-if="sortColumn === 'date'" class="text-zinc-900">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
               </div>
-              <div class="text-xs text-zinc-500 font-normal" @click.stop>
+              <div class="text-xs text-zinc-400 font-normal" @click.stop>
                 Filtres dans le panneau ci-dessus
               </div>
             </div>
           </th>
-          <th @click="handleSort('ticketNumber')" class="px-4 py-3 text-left cursor-pointer hover:bg-zinc-100 select-none align-top transition border-r border-gray-200">
+          <th @click="handleSort('ticketNumber')" class="cursor-pointer hover:bg-zinc-100 select-none transition">
             <div class="flex flex-col gap-1">
               <div class="flex justify-between items-center">
                 <span>Ticket #</span>
-                <span v-if="sortColumn === 'ticketNumber'">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                <span v-if="sortColumn === 'ticketNumber'" class="text-zinc-900">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
               </div>
-              <span class="text-xs text-zinc-500 font-normal" @click.stop>Cliquez pour trier</span>
+              <span class="text-xs text-zinc-400 font-normal" @click.stop>Cliquez pour trier</span>
             </div>
           </th>
-          <th @click="handleSort('eventName')" class="px-4 py-3 text-left cursor-pointer hover:bg-zinc-100 select-none align-top transition border-r border-gray-200">
+          <th @click="handleSort('eventName')" class="cursor-pointer hover:bg-zinc-100 select-none transition">
             <div class="flex flex-col gap-1">
               <div class="flex justify-between items-center">
                 <span>Événement</span>
-                <span v-if="sortColumn === 'eventName'">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                <span v-if="sortColumn === 'eventName'" class="text-zinc-900">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
               </div>
-              <span class="text-xs text-zinc-500 font-normal" @click.stop>Cliquez pour trier</span>
+              <span class="text-xs text-zinc-400 font-normal" @click.stop>Cliquez pour trier</span>
             </div>
           </th>
-          <th @click="handleSort('buyer')" class="px-4 py-3 text-left cursor-pointer hover:bg-zinc-100 select-none align-top transition border-r border-gray-200">
+          <th @click="handleSort('buyer')" class="cursor-pointer hover:bg-zinc-100 select-none transition">
             <div class="flex flex-col gap-1">
               <div class="flex justify-between items-center">
                 <span>Acheteur</span>
-                <span v-if="sortColumn === 'buyer'">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                <span v-if="sortColumn === 'buyer'" class="text-zinc-900">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
               </div>
-              <span class="text-xs text-zinc-500 font-normal" @click.stop>Cliquez pour trier</span>
+              <span class="text-xs text-zinc-400 font-normal" @click.stop>Cliquez pour trier</span>
             </div>
           </th>
-          <th @click="handleSort('ticketCategory')" class="px-4 py-3 text-left cursor-pointer hover:bg-zinc-100 select-none align-top transition border-r border-gray-200">
+          <th @click="handleSort('ticketCategory')" class="cursor-pointer hover:bg-zinc-100 select-none transition">
             <div class="flex flex-col gap-1">
               <div class="flex justify-between items-center">
                 <span>Catégorie</span>
-                <span v-if="sortColumn === 'ticketCategory'" class="text-blue-600">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                <span v-if="sortColumn === 'ticketCategory'" class="text-zinc-900">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
               </div>
-              <span class="text-xs text-zinc-500 font-normal" @click.stop>Cliquez pour trier</span>
+              <span class="text-xs text-zinc-400 font-normal" @click.stop>Cliquez pour trier</span>
             </div>
           </th>
-          <th @click="handleSort('priceAmount')" class="px-4 py-3 text-left cursor-pointer hover:bg-zinc-100 select-none align-top transition">
+          <th @click="handleSort('priceAmount')" class="cursor-pointer hover:bg-zinc-100 select-none transition">
             <div class="flex flex-col gap-1">
               <div class="flex justify-between items-center">
                 <span>Prix</span>
-                <span v-if="sortColumn === 'priceAmount'" class="text-blue-600">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                <span v-if="sortColumn === 'priceAmount'" class="text-zinc-900">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
               </div>
-              <span class="text-xs text-zinc-500 font-normal" @click.stop>Cliquez pour trier</span>
+              <span class="text-xs text-zinc-400 font-normal" @click.stop>Cliquez pour trier</span>
             </div>
           </th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-200">
-        <tr v-for="t in paginatedTickets" :key="t.id" class="hover:bg-blue-50/30 transition">
-          <td class="px-4 py-3 text-xs text-zinc-700 border-r border-gray-100">
+      <tbody>
+        <tr v-for="t in paginatedTickets" :key="t.id">
+          <td class="text-xs">
             <span v-if="t.generatedAtRaw !== undefined">{{ formatDateTime(t.generatedAtRaw) }}</span>
-            <span v-else-if="t.createdAtRaw !== undefined" class="text-gray-400" title="Date de réception (generatedAt manquant)">
+            <span v-else-if="t.createdAtRaw !== undefined" class="text-zinc-400" title="Date de réception (generatedAt manquant)">
               {{ formatDateTime(t.createdAtRaw) }}*
             </span>
             <span v-else>—</span>
           </td>
-          <td class="px-4 py-3 font-mono text-xs text-zinc-700 border-r border-gray-100">
+          <td class="font-mono text-xs">
             {{ t.ticketNumber ?? "—" }}
-            <div v-if="t.cancellationReason" class="text-red-600 font-bold text-xs mt-1">
+            <div v-if="t.cancellationReason" class="badge badge-error mt-1">
               ANNULÉ: {{ t.cancellationReason }}
             </div>
           </td>
-          <td class="px-4 py-3 border-r border-gray-100">
+          <td>
             <div class="font-semibold text-zinc-900">{{ t.eventName ?? "—" }}</div>
             <div class="text-xs text-zinc-500">
               {{ t.sessionDate ?? "—" }} <span v-if="t.sessionTime">à {{ t.sessionTime }}</span>
             </div>
           </td>
-          <td class="px-4 py-3 border-r border-gray-100">
+          <td>
             <div v-if="t.buyerFirstName || t.buyerLastName" class="text-zinc-900">
               {{ t.buyerFirstName }} {{ t.buyerLastName }}
-              <div v-if="t.buyerEmail" class="text-xs text-blue-600 font-medium">{{ t.buyerEmail }}</div>
-              <div v-if="t.buyerPostcode" class="text-xs text-zinc-500">{{ t.buyerPostcode }}</div>
+              <div v-if="t.buyerEmail" class="text-xs text-zinc-500">{{ t.buyerEmail }}</div>
+              <div v-if="t.buyerPostcode" class="text-xs text-zinc-400">{{ t.buyerPostcode }}</div>
             </div>
             <span v-else class="text-zinc-400">—</span>
           </td>
-          <td class="px-4 py-3 border-r border-gray-100">
-            <span 
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-              :class="getCategoryBadgeClasses(t.ticketCategory)"
-            >
+          <td>
+            <span class="badge" :class="getCategoryBadgeClasses(t.ticketCategory)">
               {{ t.ticketCategory ?? "—" }}
             </span>
           </td>
-          <td class="px-4 py-3 whitespace-nowrap font-semibold text-zinc-900">
+          <td class="whitespace-nowrap font-semibold text-zinc-900">
             <span v-if="typeof t.priceAmount === 'number'">
               {{ formatPrice(t.priceAmount, t.priceCurrency) }}
             </span>
@@ -1410,9 +1428,9 @@ onUnmounted(() => {
           </td>
         </tr>
         <tr v-if="sortedTickets.length === 0 && !loading">
-          <td class="px-4 py-8 text-center text-zinc-500" colspan="6">
-            <div class="flex flex-col items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <td class="text-center text-zinc-400" colspan="6">
+            <div class="flex flex-col items-center gap-2 py-8">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-zinc-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <p class="text-sm font-medium">Aucun ticket trouvé avec ces filtres</p>
@@ -1424,10 +1442,10 @@ onUnmounted(() => {
     </div>
 
     <!-- Pagination Controls -->
-    <div v-if="!loading && tickets.length > 0" class="mt-6 pt-4 border-t border-gray-200 flex flex-wrap justify-between items-center gap-4">
+    <div v-if="!loading && tickets.length > 0" class="mt-5 pt-4 border-t border-zinc-200 flex flex-wrap justify-between items-center gap-4">
       <div class="flex items-center gap-2 text-sm">
         <span class="text-zinc-600">Afficher</span>
-        <select v-model.number="itemsPerPage" class="border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select v-model.number="itemsPerPage" class="input w-auto py-1.5">
           <option :value="10">10</option>
           <option :value="25">25</option>
           <option :value="50">50</option>
@@ -1440,7 +1458,7 @@ onUnmounted(() => {
         <button 
           @click="currentPage--" 
           :disabled="currentPage === 1"
-          class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition"
+          class="btn-secondary"
         >
           ← Précédent
         </button>
@@ -1448,7 +1466,7 @@ onUnmounted(() => {
         <button 
           @click="currentPage++" 
           :disabled="currentPage >= totalPages"
-          class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition"
+          class="btn-secondary"
         >
           Suivant →
         </button>

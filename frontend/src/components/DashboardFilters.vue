@@ -1,10 +1,10 @@
 <template>
-  <div class="panel p-4 mb-6 space-y-4">
-    <div class="flex justify-between items-center mb-2">
-      <h2 class="text-lg font-semibold text-gray-700">Filtres</h2>
+  <div class="filter-panel space-y-4">
+    <div class="flex justify-between items-center">
+      <h2 class="text-base font-semibold text-zinc-900">Filtres</h2>
       <button 
         @click="resetFilters"
-        class="text-sm text-blue-600 hover:text-blue-800 underline"
+        class="btn-ghost text-xs"
       >
         Réinitialiser
       </button>
@@ -13,109 +13,134 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- Event Filter with Date -->
       <div class="relative" ref="eventsDropdownRef">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Événements</label>
+        <label class="filter-label">Événements</label>
         
         <div class="relative">
           <button 
             @click="showEventsDropdown = !showEventsDropdown" 
-            class="w-full bg-white border border-gray-300 rounded-md py-2 px-3 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm flex justify-between items-center"
+            class="select-trigger"
+            :class="{ 'ring-2 ring-zinc-900/10 border-zinc-400': showEventsDropdown }"
           >
-            <span class="block truncate">
+            <span class="block truncate text-left">
               {{ selectedEvents.length ? `${selectedEvents.length} sélectionné(s)` : 'Sélectionner des événements' }}
             </span>
-            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-              <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-              </svg>
-            </span>
+            <svg class="h-4 w-4 text-zinc-400 shrink-0" :class="{ 'rotate-180': showEventsDropdown }" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+            </svg>
           </button>
-          <div v-if="showEventsDropdown" class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-            <!-- Search Input -->
-            <div class="p-2 border-b border-gray-100 sticky top-0 bg-white z-10">
-              <input 
-                type="text" 
-                v-model="searchQuery" 
-                placeholder="Rechercher un événement..." 
-                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                @click.stop
-              />
-            </div>
 
-            <!-- Select All Option -->
-            <div 
-              class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 border-b border-gray-100"
-              @click="toggleAllEvents"
-            >
-              <div class="flex items-center">
+          <transition
+            enter-active-class="transition ease-out duration-100"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-75"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+          >
+            <div v-if="showEventsDropdown" class="dropdown-menu custom-scrollbar">
+              <!-- Search Input -->
+              <div class="p-2 border-b border-zinc-100 sticky top-0 bg-white z-10">
+                <input 
+                  type="text" 
+                  v-model="searchQuery" 
+                  placeholder="Rechercher un événement..." 
+                  class="input"
+                  @click.stop
+                />
+              </div>
+
+              <!-- Select All Option -->
+              <div 
+                class="dropdown-item border-b border-zinc-100 font-medium text-zinc-900"
+                @click="toggleAllEvents"
+              >
                 <input 
                   type="checkbox" 
                   :checked="areAllEventsSelected"
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  class="checkbox"
+                  @click.stop
                 />
-                <span class="ml-3 block truncate font-semibold text-blue-600">
+                <span>
                   {{ areAllEventsSelected ? 'Tout désélectionner' : 'Tout sélectionner' }}
                 </span>
               </div>
-            </div>
 
-            <div 
-              v-for="event in filteredEvents" 
-              :key="event.name" 
-              class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50"
-              @click="toggleEvent(event.name)"
-            >
-              <div class="flex items-center">
+              <div 
+                v-for="event in filteredEvents" 
+                :key="event.name" 
+                class="dropdown-item"
+                :class="{ 'dropdown-item-active': selectedEvents.includes(event.name) }"
+                @click="toggleEvent(event.name)"
+              >
                 <input 
                   type="checkbox" 
                   :checked="selectedEvents.includes(event.name)"
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  class="checkbox"
+                  @click.stop
                 />
-                <span class="ml-3 block truncate font-normal">
+                <span class="truncate flex-1">
                   {{ event.name }}
-                  <span class="text-xs text-gray-500 ml-2">({{ event.date }})</span>
                 </span>
+                <span class="text-xs text-zinc-400 shrink-0">{{ event.date }}</span>
+              </div>
+
+              <div v-if="filteredEvents.length === 0" class="px-3 py-4 text-sm text-zinc-500 text-center">
+                Aucun événement trouvé
               </div>
             </div>
-          </div>
+          </transition>
         </div>
       </div>
 
       <!-- Category Filter -->
       <div class="relative" ref="categoriesDropdownRef">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Catégories</label>
+        <label class="filter-label">Catégories</label>
         <div class="relative">
           <button 
             @click="showCategoriesDropdown = !showCategoriesDropdown" 
-            class="w-full bg-white border border-gray-300 rounded-md py-2 px-3 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm flex justify-between items-center"
+            class="select-trigger"
+            :class="{ 'ring-2 ring-zinc-900/10 border-zinc-400': showCategoriesDropdown }"
           >
-            <span class="block truncate">
+            <span class="block truncate text-left">
               {{ selectedCategories.length ? `${selectedCategories.length} sélectionné(s)` : 'Sélectionner des catégories' }}
             </span>
-            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-              <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-              </svg>
-            </span>
+            <svg class="h-4 w-4 text-zinc-400 shrink-0" :class="{ 'rotate-180': showCategoriesDropdown }" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+            </svg>
           </button>
-          <div v-if="showCategoriesDropdown" class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-            <div 
-              v-for="category in categories" 
-              :key="category" 
-              class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50"
-              @click="toggleCategory(category)"
-            >
-              <div class="flex items-center">
+
+          <transition
+            enter-active-class="transition ease-out duration-100"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-75"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+          >
+            <div v-if="showCategoriesDropdown" class="dropdown-menu custom-scrollbar">
+              <div 
+                v-for="category in categories" 
+                :key="category" 
+                class="dropdown-item"
+                :class="{ 'dropdown-item-active': selectedCategories.includes(category) }"
+                @click="toggleCategory(category)"
+              >
                 <input 
                   type="checkbox" 
                   :checked="selectedCategories.includes(category)"
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  class="checkbox"
+                  @click.stop
                 />
-                <span class="ml-3 block truncate font-normal">
+                <span class="truncate">
                   {{ category }}
                 </span>
               </div>
+
+              <div v-if="categories.length === 0" class="px-3 py-4 text-sm text-zinc-500 text-center">
+                Aucune catégorie disponible
+              </div>
             </div>
-          </div>
+          </transition>
         </div>
       </div>
     </div>

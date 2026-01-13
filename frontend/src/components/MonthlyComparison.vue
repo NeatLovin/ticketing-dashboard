@@ -1,18 +1,18 @@
 <template>
-  <div class="panel p-6">
-    <h2 class="text-xl font-bold mb-4">Récapitulation mensuelle - Comparaison année sur année</h2>
+  <div class="panel p-5">
+    <h2 class="section-heading mb-4">Récapitulation mensuelle - Comparaison année sur année</h2>
     
     <div class="mb-4">
-      <label class="block text-sm font-medium mb-2">Sélectionner les années :</label>
-      <div class="flex flex-wrap gap-4">
+      <label class="filter-label">Sélectionner les années :</label>
+      <div class="flex flex-wrap gap-4 mt-2">
         <label v-for="year in availableYears" :key="year" class="inline-flex items-center cursor-pointer">
           <input 
             type="checkbox" 
             :value="year" 
             v-model="selectedYears" 
-            class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            class="checkbox"
           >
-          <span class="ml-2 text-gray-700">{{ year }}</span>
+          <span class="ml-2 text-zinc-700">{{ year }}</span>
         </label>
       </div>
     </div>
@@ -22,14 +22,14 @@
         <div 
           v-for="(stat, index) in selectedYearsTotals" 
           :key="stat.year"
-          class="p-4 rounded-lg border"
+          class="p-4 rounded-xl border"
           :style="{ borderColor: getColor(index).border, backgroundColor: getColor(index).bg.replace('0.6', '0.1') }"
         >
-          <div class="text-sm text-gray-600 mb-1">Année {{ stat.year }}</div>
+          <div class="text-sm text-zinc-600 mb-1">Année {{ stat.year }}</div>
           <div class="text-3xl font-bold" :style="{ color: getColor(index).border }">
             {{ stat.count }}
           </div>
-          <div class="text-xs text-gray-500 mt-1">tickets vendus</div>
+          <div class="text-xs text-zinc-500 mt-1">tickets vendus</div>
           <div class="text-sm font-semibold mt-2" :style="{ color: getColor(index).border }">
             {{ stat.revenue.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF' }) }}
           </div>
@@ -37,14 +37,14 @@
       </div>
 
       <div class="mt-6">
-        <h3 class="text-lg font-semibold mb-3">Comparaison mensuelle</h3>
+        <h3 class="text-base font-semibold text-zinc-900 mb-3">Comparaison mensuelle</h3>
         <div class="relative" style="height: 400px">
           <Bar :data="chartData" :options="chartOptions" />
         </div>
       </div>
 
       <div class="mt-6">
-        <h3 class="text-lg font-semibold mb-3">Évolution des revenus</h3>
+        <h3 class="text-base font-semibold text-zinc-900 mb-3">Évolution des revenus</h3>
         <div class="relative" style="height: 400px">
           <Line :data="revenueChartData" :options="revenueChartOptions" />
         </div>

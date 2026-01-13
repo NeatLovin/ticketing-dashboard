@@ -52,27 +52,27 @@
             <div class="space-y-3">
               <div class="panel p-4">
                 <div class="flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                  <label class="inline-flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" v-model="showCumulative" class="rounded text-blue-600 focus:ring-blue-500" />
-                    <span class="text-sm text-zinc-700">Ventes cumulées</span>
+                <div class="flex flex-wrap items-center gap-4">
+                  <label class="checkbox-row">
+                    <input type="checkbox" v-model="showCumulative" class="checkbox" />
+                    <span>Ventes cumulées</span>
                   </label>
-                  <label class="inline-flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" v-model="showHourly" class="rounded text-blue-600 focus:ring-blue-500" />
-                    <span class="text-sm text-zinc-700">Ventes par période</span>
+                  <label class="checkbox-row">
+                    <input type="checkbox" v-model="showHourly" class="checkbox" />
+                    <span>Ventes par période</span>
                   </label>
                 </div>
               
-                <div class="flex items-center bg-zinc-100 p-1 rounded-lg">
+                <div class="toggle-group">
                   <button 
                     @click="viewMode = 'daily'"
-                    :class="['px-3 py-1.5 rounded-md text-sm transition-all', viewMode === 'daily' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700']"
+                    :class="['toggle-item', viewMode === 'daily' && 'toggle-item-active']"
                   >
                     Journalier
                   </button>
                   <button 
                     @click="viewMode = 'weekly'"
-                    :class="['px-3 py-1.5 rounded-md text-sm transition-all', viewMode === 'weekly' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700']"
+                    :class="['toggle-item', viewMode === 'weekly' && 'toggle-item-active']"
                   >
                     Hebdomadaire
                   </button>

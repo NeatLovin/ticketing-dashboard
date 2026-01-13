@@ -9,8 +9,8 @@
 
         <div class="flex items-center gap-3">
           <div
-            class="px-4 py-2 rounded-xl border text-sm font-extrabold tracking-wide"
-            :class="isEmulator ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-900 border-zinc-200'"
+            class="badge px-4 py-2 font-extrabold tracking-wide"
+            :class="isEmulator ? 'badge-dark' : 'badge-outline'"
             :title="isEmulator ? 'Connecté à l\'émulateur Firestore' : 'Connecté à Firestore Cloud'"
           >
             <span class="block text-[11px] font-semibold opacity-80">ENV</span>
@@ -19,7 +19,7 @@
 
           <a
             v-if="isDev"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+            class="btn-secondary"
             href="http://127.0.0.1:4000"
             target="_blank"
             rel="noreferrer"
@@ -30,7 +30,7 @@
           <button
             v-if="isDev"
             type="button"
-            class="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+            class="btn-secondary"
             @click="clearLocalStorageCache"
             title="Supprime tout le localStorage puis recharge la page"
           >
@@ -70,19 +70,19 @@
         </div>
 
         <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <router-link to="/overview" class="rounded-xl border border-zinc-200 p-4 bg-white hover:bg-zinc-50">
+          <router-link to="/overview" class="link-card">
             <div class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Overview</div>
             <div class="mt-1 text-base font-bold text-zinc-900">Indicateurs & tendances</div>
             <p class="mt-1 text-sm text-zinc-600">KPIs, top événements, dernières ventes.</p>
           </router-link>
 
-          <router-link to="/dashboard" class="rounded-xl border border-zinc-200 p-4 bg-white hover:bg-zinc-50">
+          <router-link to="/dashboard" class="link-card">
             <div class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Dashboard</div>
             <div class="mt-1 text-base font-bold text-zinc-900">Graphiques en temps réel</div>
             <p class="mt-1 text-sm text-zinc-600">Courbes, répartition, carte, panier moyen, comparaison mensuelle.</p>
           </router-link>
 
-          <router-link to="/tickets" class="rounded-xl border border-zinc-200 p-4 bg-white hover:bg-zinc-50">
+          <router-link to="/tickets" class="link-card">
             <div class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Tickets</div>
             <div class="mt-1 text-base font-bold text-zinc-900">Liste & recherche</div>
             <p class="mt-1 text-sm text-zinc-600">Filtrer, trier et explorer les ventes.</p>
@@ -117,7 +117,7 @@
               <div class="flex items-center gap-2">
                 <button
                   type="button"
-                  class="px-3 py-1.5 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-60 disabled:hover:bg-white"
+                  class="btn-secondary"
                   :disabled="anyLoading"
                   @click="runHealthChecks"
                   title="Relance les vérifications Firestore + tickets"

@@ -53,30 +53,30 @@
         <button type="button" class="btn" @click="goToTickets">Voir dans Tickets</button>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-zinc-600">
-          <thead class="bg-zinc-50 text-zinc-700 uppercase font-semibold">
+      <div class="table-container">
+        <table class="table">
+          <thead>
             <tr>
-              <th class="px-4 py-3">Acheteur</th>
-              <th class="px-4 py-3">Date</th>
-              <th class="px-4 py-3">Session</th>
-              <th class="px-4 py-3 text-right">Montant</th>
+              <th>Acheteur</th>
+              <th>Date</th>
+              <th>Session</th>
+              <th class="text-right">Montant</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-zinc-100">
-            <tr v-for="t in tickets" :key="t.id" class="hover:bg-zinc-50 transition">
-              <td class="px-4 py-3">
+          <tbody>
+            <tr v-for="t in tickets" :key="t.id">
+              <td>
                 <div class="font-medium text-zinc-900">
                   {{ buyerLabel(t) }}
                 </div>
                 <div class="text-xs text-zinc-500 truncate" :title="t.ticketNumber">{{ t.ticketNumber }}</div>
               </td>
-              <td class="px-4 py-3 text-xs text-zinc-500">{{ formatCreatedAt(t.createdAt) }}</td>
-              <td class="px-4 py-3">
+              <td class="text-xs text-zinc-500">{{ formatCreatedAt(t.createdAt) }}</td>
+              <td>
                 <div class="font-medium text-zinc-900">{{ t.sessionDate || '—' }} <span v-if="t.sessionTime" class="text-zinc-400">·</span> {{ formatTime(t.sessionTime) }}</div>
                 <div class="text-xs text-zinc-500 truncate" :title="t.venueName">{{ t.venueName || '' }}</div>
               </td>
-              <td class="px-4 py-3 text-right font-semibold text-green-700">{{ formatCurrency(t.priceAmount, t.priceCurrency) }}</td>
+              <td class="text-right font-semibold text-green-700">{{ formatCurrency(t.priceAmount, t.priceCurrency) }}</td>
             </tr>
           </tbody>
         </table>

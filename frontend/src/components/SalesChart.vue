@@ -1,6 +1,6 @@
 <template>
-  <div class="panel p-6">
-    <h2 class="text-xl font-bold mb-4">Évolution des ventes</h2>
+  <div class="panel p-5">
+    <h2 class="section-heading mb-4">Évolution des ventes</h2>
     
     <div class="relative" style="height: 400px">
       <Line :data="chartData" :options="chartOptions" />
