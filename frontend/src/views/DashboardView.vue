@@ -109,6 +109,9 @@
           
             <!-- Localisation géographique -->
             <GeographicMap :tickets="filteredTickets" />
+
+            <!-- Heatmap temporelle -->
+            <TemporalHeatmap :tickets="filteredTickets" />
           
             <!-- Panier moyen -->
             <AverageBasket :tickets="filteredTickets" />
@@ -128,6 +131,7 @@ import TicketsDistributionChart from "../components/TicketsDistributionChart.vue
 import GeographicMap from "../components/GeographicMap.vue";
 import AverageBasket from "../components/AverageBasket.vue";
 import MonthlyComparison from "../components/MonthlyComparison.vue";
+import TemporalHeatmap from "../components/TemporalHeatmap.vue";
 import DashboardFilters from "../components/DashboardFilters.vue";
 import SkeletonBlock from "../components/SkeletonBlock.vue";
 import { TicketsService } from "../services/ticketsService";

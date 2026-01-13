@@ -326,9 +326,20 @@ const peakSalesTime = computed(() => {
   const slots = {};
 
   tickets.value.forEach(t => {
-    const timestamp = t.createdAt;
+    // Utiliser generatedAt (date d'achat réelle) en priorité, sinon createdAt
+    const timestamp = t.generatedAt || t.createdAt;
     if (!timestamp) return;
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    
+    let date;
+    if (timestamp.toDate) {
+      date = timestamp.toDate();
+    } else if (typeof timestamp === 'string') {
+      date = new Date(timestamp);
+    } else {
+      return;
+    }
+    
+    if (isNaN(date.getTime())) return;
     
     // Day of week (0-6, 0=Sunday)
     const day = date.getDay(); 
