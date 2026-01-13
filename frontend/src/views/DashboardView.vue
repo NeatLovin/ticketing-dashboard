@@ -47,7 +47,24 @@
       </div>
 
         <div v-else>
-          <div v-if="hasSelectedEvents" class="space-y-6">
+          <!-- Message quand aucun événement n'est sélectionné -->
+          <div v-if="!hasSelectedEvents" class="panel p-8 text-center">
+            <div class="flex flex-col items-center justify-center space-y-4">
+              <div class="p-4 bg-zinc-100 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-zinc-900">Aucun événement sélectionné</h3>
+                <p class="mt-1 text-sm text-zinc-500 max-w-md">
+                  Sélectionnez au moins un événement dans les filtres ci-dessus pour afficher les visualisations et statistiques.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="space-y-6">
             <!-- Courbes de vente en temps réel -->
             <div class="space-y-3">
               <div class="panel p-4">
