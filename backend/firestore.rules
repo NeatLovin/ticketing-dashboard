@@ -9,6 +9,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Aggregated events for Agenda.
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Default deny for every other collection/document.
     match /{document=**} {
       allow read, write: if false;

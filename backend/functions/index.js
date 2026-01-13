@@ -7,6 +7,7 @@ require("dotenv").config();
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const { FieldValue } = require("firebase-admin/firestore");
 const crypto = require("crypto");
 
 // Init Firestore
@@ -14,6 +15,80 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
+
+function isFiniteNumber(value) {
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    const num = Number(trimmed);
+    return Number.isFinite(num);
+  }
+  return false;
+}
+
+function toNumber(value) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return Number(value.trim());
+  return NaN;
+}
+
+function normalizeCurrencyList(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((x) => x && typeof x === "object")
+    .map((x) => ({
+      currency: typeof x.currency === "string" ? x.currency : null,
+      amount: typeof x.amount === "number" ? x.amount : Number(x.amount),
+    }))
+    .filter((x) => x.currency && Number.isFinite(x.amount));
+}
+
+function addToCurrencyList(list, currency, delta) {
+  const normalized = normalizeCurrencyList(list);
+  const cur = typeof currency === "string" ? currency.trim() : "";
+  if (!cur) return normalized;
+
+  const d = typeof delta === "number" ? delta : Number(delta);
+  if (!Number.isFinite(d)) return normalized;
+
+  const idx = normalized.findIndex((x) => x.currency === cur);
+  if (idx >= 0) {
+    normalized[idx] = { currency: cur, amount: normalized[idx].amount + d };
+    return normalized;
+  }
+
+  return [...normalized, { currency: cur, amount: d }];
+}
+
+function normalizeSessionsArray(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((s) => s && typeof s === "object")
+    .map((s) => ({
+      date: typeof s.date === "string" ? s.date : null,
+      time: typeof s.time === "string" ? s.time : null,
+      locationName: typeof s.locationName === "string" ? s.locationName : null,
+      ticketsCount: typeof s.ticketsCount === "number" ? s.ticketsCount : Number(s.ticketsCount),
+      revenueByCurrency: normalizeCurrencyList(s.revenueByCurrency),
+    }))
+    .map((s) => ({
+      ...s,
+      ticketsCount: Number.isFinite(s.ticketsCount) ? s.ticketsCount : 0,
+    }));
+}
+
+function sessionsMatch(a, b) {
+  const ad = a && a.date ? a.date : null;
+  const at = a && a.time ? a.time : null;
+  const al = a && a.locationName ? a.locationName : null;
+
+  const bd = b && b.date ? b.date : null;
+  const bt = b && b.time ? b.time : null;
+  const bl = b && b.locationName ? b.locationName : null;
+
+  return ad === bd && at === bt && al === bl;
+}
 
 /**
  * Parse l'en-tête Petzi-Signature
@@ -120,21 +195,21 @@ function buildTicketDoc(payload) {
   const mainSession = sessions.length > 0 ? sessions[0] : null;
 
   // Gestion robuste du prix (objet ou string)
-  let priceObj = ticket.price;
+  const priceObj = ticket.price;
   let amountNumber = null;
   let priceCurrency = null;
   let priceAmountRaw = null;
 
-  if (typeof priceObj === 'object' && priceObj !== null) {
+  if (typeof priceObj === "object" && priceObj !== null) {
     // Format standard: { amount: "25.00", currency: "CHF" }
     if (priceObj.amount) {
       amountNumber = parseFloat(priceObj.amount);
       priceAmountRaw = priceObj.amount;
     }
     priceCurrency = priceObj.currency || null;
-  } else if (typeof priceObj === 'string') {
+  } else if (typeof priceObj === "string") {
     // Format legacy/simple: "25.00"
-    const match = priceObj.match(/([\d\.]+)/);
+    const match = priceObj.match(/([\d.]+)/);
     if (match) {
       amountNumber = parseFloat(match[1]);
       priceAmountRaw = priceObj;
@@ -243,6 +318,82 @@ exports.petziWebhook = functions.https.onRequest(async (req, res) => {
       await db.collection("tickets").doc(id).set(doc, { merge: true });
     } else {
       await db.collection("tickets").add(doc);
+    }
+
+    // 7bis) Mise à jour de l'agrégat "events" (par eventId)
+    // Le payload ticket contient: eventId, eventName, sessionDate/time/location, price.amount/currency.
+    // Si eventId absent: on ne peut pas agréger.
+    if (doc.eventId !== null && doc.eventId !== undefined && doc.eventId !== "") {
+      const eventId = String(doc.eventId);
+      const eventName = doc.eventName ?? null;
+
+      const sessionDate = doc.sessionDate ?? null;
+      const sessionTime = doc.sessionTime ?? null;
+      const venueName = doc.venueName ?? null;
+
+      const amountValid = isFiniteNumber(doc.priceAmount);
+      const amount = amountValid ? toNumber(doc.priceAmount) : NaN;
+      const currency = (typeof doc.priceCurrency === "string" && doc.priceCurrency.trim()) ? doc.priceCurrency.trim() : null;
+
+      const eventRef = db.collection("events").doc(eventId);
+
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(eventRef);
+        const existing = snap.exists ? (snap.data() || {}) : {};
+
+        // Base (sans inventer) + compteur global
+        const base = {
+          eventId,
+          ticketsCount: FieldValue.increment(1),
+        };
+        if (eventName) base.eventName = eventName;
+
+        // Revenus au niveau event (liste, pas de champs dynamiques revenue.CHF)
+        if (amountValid && currency) {
+          const currentRevenue = existing.revenueByCurrency;
+          base.revenueByCurrency = addToCurrencyList(currentRevenue, currency, amount);
+        }
+
+        // Sessions au niveau event: tableau d'objets, pas de clés dynamiques "sessions.<...>"
+        const hasSessionIdentity = !!(sessionDate || sessionTime || venueName);
+        if (hasSessionIdentity) {
+          const currentSessions = normalizeSessionsArray(existing.sessions);
+          const nextSessions = [...currentSessions];
+
+          const sessionIdentity = {
+            date: sessionDate,
+            time: sessionTime,
+            locationName: venueName,
+          };
+
+          const idx = nextSessions.findIndex((s) => sessionsMatch(s, sessionIdentity));
+          if (idx >= 0) {
+            const prev = nextSessions[idx];
+            const updated = {
+              ...prev,
+              // On conserve les champs existants si null côté webhook
+              date: prev.date ?? sessionDate,
+              time: prev.time ?? sessionTime,
+              locationName: prev.locationName ?? venueName,
+              ticketsCount: (Number.isFinite(prev.ticketsCount) ? prev.ticketsCount : 0) + 1,
+              revenueByCurrency: (amountValid && currency) ? addToCurrencyList(prev.revenueByCurrency, currency, amount) : normalizeCurrencyList(prev.revenueByCurrency),
+            };
+            nextSessions[idx] = updated;
+          } else {
+            nextSessions.push({
+              date: sessionDate,
+              time: sessionTime,
+              locationName: venueName,
+              ticketsCount: 1,
+              revenueByCurrency: amountValid && currency ? addToCurrencyList([], currency, amount) : [],
+            });
+          }
+
+          base.sessions = nextSessions;
+        }
+
+        tx.set(eventRef, base, { merge: true });
+      });
     }
 
     // 8) Réponse rapide à Petzi
