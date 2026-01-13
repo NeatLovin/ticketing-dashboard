@@ -362,13 +362,17 @@ async function updateMap() {
       `<strong>Zone: ${zone.key}</strong><br>` +
       `Codes postaux: ${zone.uniquePostcodesCount}<br>` +
       `Tickets: ${zone.ticketsCount}<br>` +
-      `Zoom: ${zoom}`;
+      `<em style="color: #666; font-size: 0.85em;">Double-cliquez pour zoomer</em>`;
 
     const marker = L.marker([coords.lat, coords.lon]).bindPopup(popup);
 
-    // Drill-down: cliquer pour zoomer et autoriser un niveau plus fin.
-    marker.on("click", () => {
+    // Drill-down: double-clic pour zoomer et autoriser un niveau plus fin.
+    // Le simple clic ouvre le popup (comportement par défaut de Leaflet).
+    marker.on("dblclick", (e) => {
+      L.DomEvent.stopPropagation(e);
       if (!map) return;
+      // Fermer le popup avant de zoomer
+      marker.closePopup();
       focusPrefix.value = zone.prefixDigits;
       const nextDigits = Math.min(4, zone.digits + 1);
       const targetZoom = Math.max(map.getZoom(), zoomForNextDigits(nextDigits));
