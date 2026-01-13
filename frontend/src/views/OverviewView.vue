@@ -194,7 +194,12 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="event in topEvents" :key="event.name">
+                  <tr 
+                    v-for="event in topEvents" 
+                    :key="event.eventId" 
+                    class="cursor-pointer hover:bg-zinc-50 transition-colors"
+                    @click="goToEvent(event.eventId)"
+                  >
                     <td class="px-5 py-4 font-medium text-zinc-900 truncate max-w-xs" :title="event.name">
                       {{ event.name }}
                     </td>
@@ -258,8 +263,11 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { TicketsService } from '../services/ticketsService';
 import SkeletonBlock from '../components/SkeletonBlock.vue';
+
+const router = useRouter();
 
 const tickets = ref([]);
 const loading = ref(true);
@@ -410,18 +418,26 @@ const topEvents = computed(() => {
   const eventsMap = {};
   
   tickets.value.forEach(t => {
+    const eventId = t.eventId;
     const name = t.eventName || 'Inconnu';
-    if (!eventsMap[name]) {
-      eventsMap[name] = { name, count: 0, revenue: 0 };
+    if (!eventId) return; // Skip tickets without eventId
+    
+    if (!eventsMap[eventId]) {
+      eventsMap[eventId] = { eventId, name, count: 0, revenue: 0 };
     }
-    eventsMap[name].count++;
-    eventsMap[name].revenue += (parseFloat(t.priceAmount) || 0);
+    eventsMap[eventId].count++;
+    eventsMap[eventId].revenue += (parseFloat(t.priceAmount) || 0);
   });
 
   return Object.values(eventsMap)
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5);
 });
+
+// Navigate to event page
+const goToEvent = (eventId) => {
+  router.push({ name: 'event', params: { eventId } });
+};
 
 // Recent Sales
 const recentTickets = computed(() => {
