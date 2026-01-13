@@ -61,7 +61,12 @@
         >
           <div v-if="!cell" class="h-full" />
           <div v-else>
-            <div class="flex items-baseline justify-between">
+            <button
+              type="button"
+              class="w-full flex items-baseline justify-between rounded-md px-1 -mx-1 hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-200"
+              :title="`Voir les tickets vendus le ${cell.dateKey}`"
+              @click="goToTicketsForDay(cell.dateKey)"
+            >
               <div class="text-xs font-semibold text-zinc-700">{{ cell.day }}</div>
 
               <div
@@ -81,7 +86,7 @@
               </div>
 
               <div class="text-[10px] text-zinc-400">{{ cell.weekdayShort }}</div>
-            </div>
+            </button>
 
             <div class="mt-2 space-y-1">
               <button
@@ -360,6 +365,17 @@ async function loadDailySalesCounts() {
 function goToEvent(eventId) {
   if (!eventId) return;
   router.push({ path: `/events/${encodeURIComponent(String(eventId))}` });
+}
+
+function goToTicketsForDay(dateKey) {
+  if (!dateKey) return;
+  router.push({
+    name: "tickets",
+    query: {
+      dateStart: String(dateKey),
+      dateEnd: String(dateKey),
+    },
+  });
 }
 
 function normalizeSessionsMap(sessions) {
