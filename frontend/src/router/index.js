@@ -4,6 +4,8 @@ import HomeView from "../views/HomeView.vue";
 import OverviewView from "../views/OverviewView.vue";
 import TicketsView from "../views/TicketsView.vue";
 import DashboardView from "../views/DashboardView.vue";
+import AgendaView from "../views/AgendaView.vue";
+import EventView from "../views/EventView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,6 +29,16 @@ const router = createRouter({
       path: "/tickets",
       name: "tickets",
       component: TicketsView,
+    },
+    {
+      path: "/agenda",
+      name: "agenda",
+      component: AgendaView,
+    },
+    {
+      path: "/events/:eventId",
+      name: "event",
+      component: EventView,
     },
   ],
 });
